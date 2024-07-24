@@ -18,6 +18,9 @@ let questions = [
    },
   { id: 2, question: 'What is the capital of France?',
     answers: ['Paris', 'London', 'Berlin', 'Madrid']
+  },
+  { id: 2, question: 'What is the capital of France?',
+    answers: ['Paris', 'London', 'Berlin', 'Madrid']
   }
 ]
  
