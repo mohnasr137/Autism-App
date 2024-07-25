@@ -1,124 +1,26 @@
 // packages
 const express = require("express");
-const { google } = require("googleapis");
 
 // imports
+const {
+  seeAllVideos,
+  seeAllChannels,
+  seeAllHistory,
+  deleteAllHistory,
+  video,
+  channel,
+} = require("../controllers/home/home");
 
 // init
 const homeRouter = express.Router();
-const youtube = google.youtube({
-  version: "v3",
-  auth: process.env.YOUR_API_KEY,
-});
-const defaultSearch = "autism";
-const defaultVideoCategoryIds = {
-  "People & Blogs": "22",
-  Education: "27",
-  "Science & Technology": "28",
-  "Nonprofits & Activism": "29",
-  Documentary: "35",
-};
-const defaultRegionCode = "US";
-const defaultRelevanceLanguage = "en";
-const defaultVideoSyndicated = "true";
-const defaultOrder = "relevance";
 
 // routers
-homeRouter.get("/seeAllVideos", async (req, res) => {
-  try {
-    let filters = req.query;
-    delete filters["search"];
-    let params = {
-      part: "snippet",
-      q: req.query.search || defaultSearch,
-      type: "video",
-      maxResults: 10,
-      regionCode: defaultRegionCode,
-      relevanceLanguage: defaultRelevanceLanguage,
-      videoSyndicated: defaultVideoSyndicated,
-      order: defaultOrder,
-      ...filters,
-    };
-    if ("videoCategoryId" in params) {
-      params.videoCategoryId = defaultVideoCategoryIds[params.videoCategoryId];
-    }
-    console.log(filters);
-    console.log(params);
-    const videos = await youtube.search.list(params);
-    res.json(videos.data);
-    // res.json({
-    //   videos: videos.data.items,
-    //   nextPageToken: videos.data.nextPageToken || null,
-    // });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
-homeRouter.get("/seeAllChannels", async (req, res) => {
-  try {
-    let filters = req.query;
-    delete filters["search"];
-    let params = {
-      part: "snippet",
-      q: req.query.search || defaultSearch,
-      type: "channel",
-      maxResults: 10,
-      regionCode: defaultRegionCode,
-      relevanceLanguage: defaultRelevanceLanguage,
-      order: defaultOrder,
-      ...filters,
-    };
-    console.log(filters);
-    console.log(params);
-    const channels = await youtube.search.list(params);
-    res.json(channels.data);
-    // res.json({
-    //   videos: videos.data.items,
-    //   nextPageToken: videos.data.nextPageToken || null,
-    // });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
-homeRouter.get("/video", async (req, res) => {
-  try {
-    const video = await youtube.videos.list({
-      part: "snippet,contentDetails,statistics",
-      id: req.query.videoId,
-    });
-    res.json({
-      data: video.data,
-      url: `https://www.youtube.com/watch?v=${video.data.items[0].id}`,
-    });
-    // res.json({
-    //   videos: videos.data.items,
-    //   nextPageToken: videos.data.nextPageToken || null,
-    // });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
-homeRouter.get("/channel", async (req, res) => {
-  try {
-    const channel = await youtube.channels.list({
-      part: "snippet,contentDetails,statistics",
-      id: req.query.channelId,
-    });
-    res.json({
-      data: channel.data,
-      url: `https://www.youtube.com/${channel.data.items[0].snippet.customUrl}`,
-    });
-    // res.json({
-    //   videos: videos.data.items,
-    //   nextPageToken: videos.data.nextPageToken || null,
-    // });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
+homeRouter.get("/seeAllVideos", seeAllVideos);
+homeRouter.get("/seeAllChannels", seeAllChannels);
+homeRouter.get("/seeAllHistory", seeAllHistory);
+homeRouter.get("/deleteAllHistory", deleteAllHistory);
+homeRouter.get("/video", video);
+homeRouter.get("/channel", channel);
 
 module.exports = homeRouter;
 

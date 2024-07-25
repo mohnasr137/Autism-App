@@ -40,6 +40,12 @@ const userSchema = mongoose.Schema({
   code: {
     type: String,
   },
+  history: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
 });
 
 const User = mongoose.model("User", userSchema);
