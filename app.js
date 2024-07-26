@@ -6,6 +6,7 @@ const cors = require("cors");
 // imports
 const authRouter = require("./routers/auth");
 const homeRouter = require("./routers/home");
+const resourceRouter = require("./routers/resource");
 const authJwt = require("./middlewares/jwt");
 
 // init
@@ -23,6 +24,7 @@ app.use(express.json());
 // routers
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
+app.use(`${url}/resource`, resourceRouter);
 app.use(`/:error`, (req, res) => {
   const { error } = req.params;
   res.send(

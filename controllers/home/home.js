@@ -8,10 +8,8 @@ const User = require("../../models/user");
 //init
 const youtube = google.youtube({
   version: "v3",
-  auth: process.env.YOUR_API_KEY,
+  auth: process.env.API_KEY,
 });
-const defaultSearch = "autism";
-// defaultSearch should changes to the required value
 const defaultVideoCategoryIds = {
   "People & Blogs": "22",
   Education: "27",
@@ -23,6 +21,7 @@ const defaultRegionCode = "US";
 const defaultRelevanceLanguage = "en";
 const defaultVideoSyndicated = "true";
 const defaultOrder = "relevance";
+const defaultSearch = "autism";
 
 // routers
 const seeAllVideos = async (req, res) => {
@@ -43,6 +42,7 @@ const seeAllVideos = async (req, res) => {
     if ("videoCategoryId" in params) {
       params.videoCategoryId = defaultVideoCategoryIds[params.videoCategoryId];
     }
+
     const videos = await youtube.search.list(params);
     const fullData = await Promise.all(
       videos.data.items.map(async (item) => {
@@ -67,7 +67,8 @@ const seeAllVideos = async (req, res) => {
         };
       })
     );
-    res.json({
+
+    return res.status(200).json({
       nextPageToken: videos.data.nextPageToken || null,
       prevPageToken: videos.data.prevPageToken || null,
       fullData,
@@ -111,7 +112,7 @@ const seeAllChannels = async (req, res) => {
       })
     );
 
-    res.json({
+    return res.status(200).json({
       nextPageToken: channels.data.nextPageToken || null,
       prevPageToken: channels.data.prevPageToken || null,
       fullData,
@@ -127,6 +128,7 @@ const seeAllHistory = async (req, res) => {
     const tokenDecode = jwt.decode(token);
     const existingUser = await User.findById(tokenDecode.id);
     const videosList = existingUser.history;
+
     let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
@@ -138,6 +140,7 @@ const seeAllHistory = async (req, res) => {
       part: "snippet,contentDetails,statistics",
       id: channelsList.join(","),
     });
+
     videos = videos.data.items.map((item) => {
       return {
         id: item.id,
@@ -155,10 +158,7 @@ const seeAllHistory = async (req, res) => {
         url: `https://www.youtube.com/watch?v=${item.snippet.customUrl}`,
       };
     });
-    const fullData = {
-      videos,
-      channels,
-    };
+    const fullData = { videos, channels };
     return res.status(200).json({ fullData });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -186,6 +186,7 @@ const video = async (req, res) => {
       part: "snippet,contentDetails,statistics",
       id: video.data.items[0].snippet.channelId,
     });
+
     const fullData = {
       vedio: {
         id: video.data.items[0].id,
@@ -207,6 +208,7 @@ const video = async (req, res) => {
         url: `https://www.youtube.com/${channel.data.items[0].snippet.customUrl}`,
       },
     };
+
     let list = [];
     const token = req.query.token;
     const tokenDecode = jwt.decode(token);
@@ -236,7 +238,6 @@ const channel = async (req, res) => {
       part: "snippet,contentDetails,statistics",
       id: req.query.channelId,
     });
-
     const uploadsPlaylistId =
       channel.data.items[0].contentDetails.relatedPlaylists.uploads;
     let videoIds = await youtube.playlistItems.list({
@@ -248,12 +249,10 @@ const channel = async (req, res) => {
     const videoIdsArray = videoIds.data.items.map(
       (item) => item.contentDetails.videoId
     );
-
     let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videoIdsArray.join(","),
     });
-
     videos = videos.data.items.map((item) => {
       return {
         id: item.id,
@@ -279,10 +278,10 @@ const channel = async (req, res) => {
       videos,
     };
 
-    res.json({
-      fullData,
+    return res.status(200).json({
       nextPageToken: videoIds.data.nextPageToken || null,
       prevPageToken: videoIds.data.prevPageToken || null,
+      fullData,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
