@@ -24,7 +24,7 @@ const defaultOrder = "relevance";
 const defaultSearch = "autism";
 
 // routers
-const seeAllVideos = async (req, res) => {
+const showAllVideos = async (req, res) => {
   try {
     let filters = req.query;
     delete filters["search"];
@@ -78,7 +78,7 @@ const seeAllVideos = async (req, res) => {
   }
 };
 
-const seeAllChannels = async (req, res) => {
+const showAllChannels = async (req, res) => {
   try {
     let filters = req.query;
     delete filters["search"];
@@ -122,9 +122,10 @@ const seeAllChannels = async (req, res) => {
   }
 };
 
-const seeAllHistory = async (req, res) => {
+const showAllHistory = async (req, res) => {
   try {
-    const token = req.query.token;
+    const authHeader = req.headers["authorization"];
+    const token = authHeader.split(" ")[1];
     const tokenDecode = jwt.decode(token);
     const existingUser = await User.findById(tokenDecode.id);
     const videosList = existingUser.history;
@@ -167,7 +168,8 @@ const seeAllHistory = async (req, res) => {
 
 const deleteAllHistory = async (req, res) => {
   try {
-    const token = req.query.token;
+    const authHeader = req.headers["authorization"];
+    const token = authHeader.split(" ")[1];
     const tokenDecode = jwt.decode(token);
     await User.updateOne({ _id: tokenDecode.id }, { $set: { history: [] } });
     return res.status(200).json({ message: "history deleted successfuly" });
@@ -210,7 +212,8 @@ const video = async (req, res) => {
     };
 
     let list = [];
-    const token = req.query.token;
+    const authHeader = req.headers["authorization"];
+    const token = authHeader.split(" ")[1];
     const tokenDecode = jwt.decode(token);
     const existingUser = await User.findById(tokenDecode.id);
     list = existingUser.history;
@@ -289,9 +292,9 @@ const channel = async (req, res) => {
 };
 
 module.exports = {
-  seeAllVideos,
-  seeAllChannels,
-  seeAllHistory,
+  showAllVideos,
+  showAllChannels,
+  showAllHistory,
   deleteAllHistory,
   video,
   channel,

@@ -3,9 +3,9 @@ const express = require("express");
 
 // imports
 const {
-  seeAllVideos,
-  seeAllChannels,
-  seeAllHistory,
+  showAllVideos,
+  showAllChannels,
+  showAllHistory,
   deleteAllHistory,
   video,
   channel,
@@ -15,9 +15,9 @@ const {
 const homeRouter = express.Router();
 
 // routers
-homeRouter.get("/seeAllVideos", seeAllVideos);
-homeRouter.get("/seeAllChannels", seeAllChannels);
-homeRouter.get("/seeAllHistory", seeAllHistory);
+homeRouter.get("/showAllVideos", showAllVideos);
+homeRouter.get("/showAllChannels", showAllChannels);
+homeRouter.get("/showAllHistory", showAllHistory);
 homeRouter.get("/deleteAllHistory", deleteAllHistory);
 homeRouter.get("/video", video);
 homeRouter.get("/channel", channel);

@@ -2,13 +2,13 @@
 const express = require("express");
 
 // imports
-const {seeAllWebsites} = require("../controllers/home/resource")
+const { showAllWebsites } = require("../controllers/home/resource");
 
 // init
 const resourceRouter = express.Router();
 
 // routers
-resourceRouter.get("/seeAllWebsites", seeAllWebsites);
+resourceRouter.get("/showAllWebsites", showAllWebsites);
 
 // exports
 module.exports = resourceRouter;

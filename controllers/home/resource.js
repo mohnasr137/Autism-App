@@ -6,7 +6,7 @@ const SERPAPI_KEY = process.env.SERPAPI_KEY;
 const defaultSearch = "autism";
 
 // routers
-const seeAllWebsites = async (req, res) => {
+const showAllWebsites = async (req, res) => {
   try {
     const page = parseInt(req.query.page);
     if (!page) {
@@ -36,5 +36,5 @@ const seeAllWebsites = async (req, res) => {
 
 // exports
 module.exports = {
-  seeAllWebsites,
+  showAllWebsites,
 };

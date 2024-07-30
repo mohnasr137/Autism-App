@@ -1,5 +1,6 @@
 // packages
 const express = require("express");
+const path = require("path")
 const mongoose = require("mongoose");
 const cors = require("cors");
 
@@ -7,6 +8,7 @@ const cors = require("cors");
 const authRouter = require("./routers/auth");
 const homeRouter = require("./routers/home");
 const resourceRouter = require("./routers/resource");
+const communityRouter = require("./routers/community");
 const authJwt = require("./middlewares/jwt");
 
 // init
@@ -18,6 +20,7 @@ const url = process.env.API_URL;
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
+app.use(`${url}/uploads`, express.static(path.join(__dirname, "/images/uploads")));
 // app.use(authJwt);
 // app.use(`${url}/images`, express.static(path.join(__dirname, "images")));
 
@@ -25,6 +28,7 @@ app.use(express.json());
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
 app.use(`${url}/resource`, resourceRouter);
+app.use(`${url}/community`, communityRouter);
 app.use(`/:error`, (req, res) => {
   const { error } = req.params;
   res.send(
