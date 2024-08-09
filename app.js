@@ -1,15 +1,20 @@
 // packages
-const express = require("express");
-const path = require("path")
-const mongoose = require("mongoose");
-const cors = require("cors");
+import express from "express";
+import path from "path";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // imports
-const authRouter = require("./routers/auth");
-const homeRouter = require("./routers/home");
-const resourceRouter = require("./routers/resource");
-const communityRouter = require("./routers/community");
-const authJwt = require("./middlewares/jwt");
+import authRouter from "./routers/auth.js";
+import homeRouter from "./routers/home.js";
+import resourceRouter from "./routers/resource.js";
+import communityRouter from "./routers/community.js";
+import authJwt from "./middlewares/jwt.js";
 
 // init
 const app = express();
@@ -20,18 +25,20 @@ const url = process.env.API_URL;
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
-app.use(`${url}/uploads`, express.static(path.join(__dirname, "/images/uploads")));
-// app.use(authJwt);
-// app.use(`${url}/images`, express.static(path.join(__dirname, "images")));
+app.use(
+  `${url}/uploads`,
+  express.static(path.join(__dirname, "/images/uploads"))
+);
+app.use(authJwt);
 
 // routers
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
 app.use(`${url}/resource`, resourceRouter);
 app.use(`${url}/community`, communityRouter);
-app.use(`/:error`, (req, res) => {
+app.get(`/:error`, (req, res) => {
   const { error } = req.params;
-  res.send(
+  return res.send(
     `hi from error:- you write ( ${error} ) and there is no api like this`
   );
 });

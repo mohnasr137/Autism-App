@@ -1,13 +1,13 @@
 // packages
-const express = require("express");
-const multer = require("multer");
+import express from "express";
+import multer from "multer";
 
 // imports
-const {
+import {
   createPost,
   showAllPosts,
   showPost,
-} = require("../controllers/home/community");
+} from "../controllers/home/communityController.js";
 
 // init
 const communityRouter = express.Router();
@@ -37,4 +37,4 @@ communityRouter.get("/showAllPosts", showAllPosts);
 communityRouter.get("/showPost", showPost);
 
 // exports
-module.exports = communityRouter;
+export default communityRouter;

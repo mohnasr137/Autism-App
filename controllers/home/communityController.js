@@ -1,9 +1,9 @@
 // packages
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // imports
-const Post = require("../../models/post");
+import Post from "../../models/post.js";
 
 // init
 const url = process.env.API_URL;
@@ -79,7 +79,7 @@ const showPost = async (req, res) => {
   try {
     const { postId, skip } = req.query;
     if (!postId) {
-      return res.status(200).json({ message: "please enter post id" });
+      return res.status(200).json({ message: "Please enter post id" });
     }
     let existingPost;
     if (skip == 0) {
@@ -102,8 +102,7 @@ const showPost = async (req, res) => {
   }
 };
 
-// exports
-module.exports = {
+export {
   createPost,
   showAllPosts,
   showPost,

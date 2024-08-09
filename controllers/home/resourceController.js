@@ -1,5 +1,5 @@
 // packages
-const axios = require("axios");
+import axios from "axios";
 
 // init
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
@@ -34,7 +34,6 @@ const showAllWebsites = async (req, res) => {
   }
 };
 
-// exports
-module.exports = {
+export {
   showAllWebsites,
 };

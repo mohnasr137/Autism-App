@@ -1,24 +1,24 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const userSchema = mongoose.Schema({
   name: {
-    require: true,
+    required: true,
     type: String,
     trim: true,
-  },
-  phone: {
-    require: true,
-    type: String,
-    trim: true,
+    match: /^[A-Za-z0-9]*$/,
   },
   email: {
-    require: true,
+    required: true,
     type: String,
     trim: true,
+    match:
+      /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
   },
   password: {
-    require: true,
+    required: true,
     type: String,
+    trim: true,
+    match: /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
   },
   type: {
     type: String,
@@ -33,7 +33,7 @@ const userSchema = mongoose.Schema({
     default: false,
   },
   image: {
-    require: true,
+    required: true,
     type: String,
     trim: true,
   },
@@ -49,4 +49,4 @@ const userSchema = mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
-module.exports = User;
+export default User;
