@@ -1,55 +1,53 @@
-// packages
-const nodemailer = require("nodemailer");
-const bcryptjs = require("bcryptjs");
+// // packages
+import nodemailer from "nodemailer";
+import bcryptjs from "bcryptjs";
 
 // imports
-const User = require("../../models/user");
+import User from "../../models/user.js";
 
 // routers
 const sendPassEmail = async (req, res) => {
   try {
     const { email } = req.body;
-    const byGmail = true;
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
-      return res
-        .status(400)
-        .json({ message: "the user with this email not found!" });
+      return res.status(400).json({ error: "User not found" });
     }
     if (existingUser.verify === false) {
       return res
         .status(400)
-        .json({ message: "the user with this email not verifyed!" });
+        .json({ error: "User with this email is not verified" });
     }
     const code = `${Math.floor(100000 + Math.random() * 900000)}`;
     await User.updateOne({ email }, { $set: { code } });
-    if (byGmail) {
-      let transporter = nodemailer.createTransport({
-        service: "Gmail",
-        auth: {
-          user: process.env.USER,
-          pass: process.env.PASSWORD,
-        },
-      });
-      let info = await transporter.sendMail({
-        from: process.env.USER,
-        to: email,
-        subject: `Account resetPassword`,
-        text: "Welcome",
-        html: `
-      <dev>
-      <h3>resetPassword Code: </h3>
-      <h1 style="color:blue;">${code}</h1>
-      </dev>
+    let transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.USER,
+        pass: process.env.PASSWORD,
+      },
+    });
+    await transporter.sendMail({
+      from: process.env.USER,
+      to: email,
+      subject: "Reset Your Password",
+      text: "Welcome",
+      html: `
+      <div style="text-align: center; min-width: 100vh; height: 100vh; padding: 40px; font-family: sans-serif;">
+        <div style="width: 400px; padding: 5px 30px; border-radius: 10px; margin: 60px auto; border: 2px solid #e0e0e0; background-color: #F9F9F9;">
+          <h2 style="padding: 20px 0px 5px 0px;">Reset Your Password</h2>
+          <p style="font-size: 16px; color: #555555; line-height: 1.5;">We received a request to reset your password. Please use the code below to reset it:</p>
+          <div style="margin: 20px 0;">
+            <span style="font-weight: bold;letter-spacing: 4px; font-size: 25px; display: inline-block; padding: 10px 20px; background-color: #2B7FFD; color: #ffffff; text-decoration: none; border-radius: 5px;">${code}</span>
+          </div>
+          <p style="font-size: 16px; color: #555555; line-height: 1.5;">If you did not request a password reset, you can ignore this email.</p>
+        </div>
+      </div>
       `,
-      });
-      return res
-        .status(200)
-        .json({ message: "reset password email send successfully" });
-    } else {
-      phoneCode(existingUser.phone, code);
-      return res.status(200).json({ message: "phone code send successfully" });
-    }
+    });
+    return res
+      .status(200)
+      .json({ message: "Reset password email sent successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -58,25 +56,24 @@ const sendPassEmail = async (req, res) => {
 const activeResetPass = async (req, res) => {
   try {
     const { email, code } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    if (!code) {
+      return res.status(400).json({ error: "Reset code is required." });
+    }
+
     const existingUser = await User.findOne({ email });
-    if (!existingUser) {
-      return res
-        .status(400)
-        .json({ message: "the user with this email not found!" });
-    }
-    if (existingUser.verify === false) {
-      return res
-        .status(400)
-        .json({ message: "the user with this email not verifyed!" });
-    }
     if (existingUser.code === code) {
       await User.updateOne({ email }, { $set: { resetPass: true } });
-      return res.status(200).json({ message: "you can reset password" });
+      return res
+        .status(200)
+        .json({ message: "You can now reset your password" });
     } else {
-      return res.status(400).json({ message: "wrong code" });
+      return res.status(400).json({ error: "Invalid reset code" });
     }
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -85,28 +82,28 @@ const resetPassword = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
     const passwordMatch =
       /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "Password is required." });
+    }
+    if (!confirmPassword) {
+      return res.status(400).json({ error: "Confirm password is required." });
+    }
+
     const existingUser = await User.findOne({ email });
-    if (!existingUser) {
-      return res
-        .status(400)
-        .json({ message: "the user with this email not found!" });
-    }
-    if (existingUser.verify === false) {
-      return res
-        .status(400)
-        .json({ message: "the user with this email not verifyed!" });
-    }
     if (existingUser.resetPass === false) {
       return res
         .status(400)
-        .json({ message: "this email not activated to reset password!" });
+        .json({ error: "Password reset is not activated for this email" });
     }
-    if (!password.match(passwordMatch)) {
-      return res.status(400).json({ message: "please enter a valid password" });
+    if (!passwordMatch.test(password)) {
+      return res.status(400).json({ error: "Please enter a valid password" });
     }
-    if (password !== confirmPassword) {
+    if (confirmPassword !== password) {
       return res.status(400).json({
-        message: "password and confirm password are not the same",
+        error: "Password and confirm password do not match",
       });
     }
     const hashedPassword = await bcryptjs.hash(password, 8);
@@ -114,65 +111,10 @@ const resetPassword = async (req, res) => {
       { email },
       { $set: { password: hashedPassword, resetPass: false } }
     );
-    return res.status(200).json({ message: "password reset successfully" });
+    return res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = {
-  sendPassEmail,
-  activeResetPass,
-  resetPassword,
-};
-
-// const sendPassEmail = async (email, code) => {
-//   try {
-//     let transporter = nodemailer.createTransport({
-//       service: "Gmail",
-//       auth: {
-//         user: process.env.USER,
-//         pass: process.env.PASSWORD,
-//       },
-//     });
-//     let info = await transporter.sendMail({
-//       from: process.env.USER,
-//       to: email,
-//       subject: `Account resetPassword`,
-//       text: "Welcome",
-//       html: `
-//       <dev>
-//       <h3>resetPassword Code: </h3>
-//       <h1 style="color:blue;">${code}</h1>
-//       </dev>
-//       `,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
-// const resetPassCode = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     const existingUser = await User.findOne({ email });
-//     if (!existingUser) {
-//       return res
-//         .status(400)
-//         .json({ message: "the user with this email not found!" });
-//     }
-//     if (existingUser.verify === false) {
-//       return res
-//         .status(400)
-//         .json({ message: "the user with this email not verifyed!" });
-//     }
-//     const code = `${Math.floor(100000 + Math.random() * 900000)}`;
-//     await User.updateOne({ email }, { $set: { code } });
-//     verifyEmail(email, code);
-//     return res
-//       .status(200)
-//       .json({ message: "password code reset successfully" });
-//   } catch (error) {
-//     return res.status(500).json({ message: error.message });
-//   }
-// };
+export { sendPassEmail, activeResetPass, resetPassword };

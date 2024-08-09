@@ -1,14 +1,14 @@
 // packages
-const express = require("express");
+import express from "express";
 
 // imports
-const { signUp, signIn } = require("../controllers/auth/basicAuth");
-const { activeEmail } = require("../controllers/auth/verifyEmail");
-const {
+import { signUp, signIn } from "../controllers/auth/basicAuth.js";
+import { activeEmail } from "../controllers/auth/verifyEmail.js";
+import {
   sendPassEmail,
   activeResetPass,
   resetPassword,
-} = require("../controllers/auth/resetPassword");
+} from "../controllers/auth/resetPassword.js";
 
 // init
 const authRouter = express.Router();
@@ -19,6 +19,6 @@ authRouter.post("/signIn", signIn);
 authRouter.post("/sendPassEmail", sendPassEmail);
 authRouter.post("/activeResetPass", activeResetPass);
 authRouter.post("/resetPassword", resetPassword);
-authRouter.get("/:token", activeEmail);
+authRouter.get("/token/:token", activeEmail);
 
-module.exports = authRouter;
+export default authRouter;

@@ -1,39 +1,56 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/user");
-const url = process.env.API_URL;
+// packages
+import jwt from "jsonwebtoken";
+import User from "../models/user.js";
 
+// routers
 const authJwt = async (req, res, next) => {
   try {
+    const api_url = process.env.API_URL;
     const arr = [
-      { url: `${url}/auth/signUp`, method: "POST" },
-      { url: `${url}/auth/signIn`, method: "POST" },
-      { url: `${url}/can`, method: "POST" },
+      { url: `${api_url}/auth/signUp`, method: "POST" },
+      { url: `${api_url}/auth/signIn`, method: "POST" },
+      { url: `${api_url}/auth/sendPassEmail`, method: "POST" },
+      { url: `${api_url}/auth/activeResetPass`, method: "POST" },
+      { url: `${api_url}/auth/resetPassword`, method: "POST" },
+      { url: /^\/api\/v1\/auth\/token\/.+$/, method: "GET" },
     ];
+
     for (let i = 0; i < arr.length; i++) {
-      if (req.url === arr[i].url && req.method === arr[i].method) {
-        return next();
+      if (typeof arr[i].url === "string") {
+        if (req.url === arr[i].url && req.method === arr[i].method) {
+          return next();
+        }
+      }
+      if (arr[i].url instanceof RegExp) {
+        if (arr[i].url.test(req.url) && req.method === arr[i].method) {
+          return next();
+        }
       }
     }
-    let token = req.body.token;
-    // if(token === undefined){
-    //   token = req.url.replace(`${url}/auth/verify/`, "");;
-    // }
-    if (!token) {
-      return res.status(500).json("no token");
+
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) {
+      return res.status(401).json({ error: "No token provided" });
     }
+
+    const token = authHeader.split(" ")[1];
     const isVerify = jwt.verify(token, process.env.SECRET);
     if (!isVerify) {
-      return res.status(500).json("not verify");
+      return res.status(401).json({ error: "Token verification failed" });
     }
-    const user = await User.findById(isVerify.id);
-    if(!user){
-      return res.status(500).json("fake user");
+    const existingUser = await User.findById(isVerify.id);
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
     }
-    // res.locals.id = isVerify.id;
+    if (existingUser.verify === false) {
+      return res.status(400).json({ error: "User email not verified" });
+    }
+
+    req.userId = isVerify.id;
     return next();
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
-module.exports = authJwt;
+export default authJwt;

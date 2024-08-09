@@ -1,8 +1,8 @@
 // packages
-const express = require("express");
+import express from "express";
 
 // imports
-const { showAllWebsites } = require("../controllers/home/resource");
+import { showAllWebsites } from "../controllers/home/resourceController.js"
 
 // init
 const resourceRouter = express.Router();
@@ -11,4 +11,4 @@ const resourceRouter = express.Router();
 resourceRouter.get("/showAllWebsites", showAllWebsites);
 
 // exports
-module.exports = resourceRouter;
+export default resourceRouter;
