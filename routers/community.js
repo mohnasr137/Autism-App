@@ -6,7 +6,7 @@ import multer from "multer";
 import {
   createPost,
   showAllPosts,
-  showPost,
+  post,
 } from "../controllers/home/communityController.js";
 
 // init
@@ -34,7 +34,7 @@ const upload = multer({
 // routers
 communityRouter.post("/createPost", upload.array("files", 5), createPost);
 communityRouter.get("/showAllPosts", showAllPosts);
-communityRouter.get("/showPost", showPost);
+communityRouter.get("/post", post);
 
 // exports
 export default communityRouter;

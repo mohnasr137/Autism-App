@@ -7,24 +7,26 @@ const postSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    postType: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     method: {
       type: String,
       required: true,
       trim: true,
     },
-    repostId: {
+    parentId: {
       type: String,
       trim: true,
     },
     text: {
-      type: String,
-      trim: true,
-    },
-    category: {
-      type: String,
-      trim: true,
-    },
-    postType: {
       type: String,
       trim: true,
     },
@@ -56,6 +58,21 @@ const postSchema = mongoose.Schema(
       default: 0,
     },
     loveNumber: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    celebrateNumber: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    insightfulNumber: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    funnyNumber: {
       type: Number,
       min: 0,
       default: 0,

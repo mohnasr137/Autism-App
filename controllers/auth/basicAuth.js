@@ -7,18 +7,21 @@ import path from "path";
 import User from "../../models/user.js";
 import { sendVerifyEmail } from "./verifyEmail.js";
 
+// init
+const url = process.env.API_URL;
+const app_url = process.env.APP_URL;
+
 // routers
 const signUp = async (req, res) => {
   try {
-    const url = process.env.API_URL;
     const { name, email, password, confirmPassword } = req.body;
-    const image = path.join(`${url}/images/portfoilo`, "simple.jpg");
+    const image = req.protocol + "://" + req.get("host") + path.join(`${url}/portfolio`, "simple.jpg");
     if (confirmPassword !== password) {
       return res
         .status(400)
         .json({ error: "Password and confirm password do not match" });
     }
-    
+
     const existingUser = await User.findOne({ email });
     if (existingUser && existingUser.verify === true) {
       return res
