@@ -4,29 +4,31 @@ import User from "../models/user.js";
 
 // init
 const api_url = process.env.API_URL;
+const arr = [
+  { url: `${api_url}/auth/signUp`, method: "POST" },
+  { url: `${api_url}/auth/signIn`, method: "POST" },
+  { url: `${api_url}/auth/sendPassEmail`, method: "POST" },
+  { url: `${api_url}/auth/activeResetPass`, method: "POST" },
+  { url: `${api_url}/auth/resetPassword`, method: "POST" },
+  { url: `${api_url}/resource/showAllWebsites`, method: "GET" },
+  { url: /^\/api\/v1\/auth\/token\/.+$/, method: "GET" },
+];
 
 // routers
 const authJwt = async (req, res, next) => {
   try {
-    const arr = [
-      { url: `${api_url}/auth/signUp`, method: "POST" },
-      { url: `${api_url}/auth/signIn`, method: "POST" },
-      { url: `${api_url}/auth/sendPassEmail`, method: "POST" },
-      { url: `${api_url}/auth/activeResetPass`, method: "POST" },
-      { url: `${api_url}/auth/resetPassword`, method: "POST" },
-      { url: `${api_url}/resource/showAllWebsites`, method: "GET" },
-      { url: /^\/api\/v1\/auth\/token\/.+$/, method: "GET" },
-    ];
-    for (let i = 0; i < arr.length; i++) {
-      if (typeof arr[i].url === "string") {
-        if (req.url === arr[i].url && req.method === arr[i].method) {
+    const { url: reqUrl, method: reqMethod, query } = req;
+
+    for (const element of arr) {
+      if (element.method !== reqMethod) continue;
+
+      if (typeof element.url === "string") {
+        const baseUrl = reqUrl.split("?")[0];
+        if (baseUrl === element.url) {
           return next();
         }
-      }
-      if (arr[i].url instanceof RegExp) {
-        if (arr[i].url.test(req.url) && req.method === arr[i].method) {
-          return next();
-        }
+      } else if (element.url instanceof RegExp && element.url.test(reqUrl)) {
+        return next();
       }
     }
 

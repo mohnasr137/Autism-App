@@ -10,8 +10,12 @@ const showAllWebsites = async (req, res) => {
   try {
     const page = parseInt(req.query.page);
     if (!page) {
-      return res.status(200).json({ message: "please enter page number" });
+      return res.status(200).json({ message: "Please enter page number" });
     }
+    if (page == 0) {
+      return res.status(200).json({ message: "Invalid page number" });
+    }
+    
     const start = (page - 1) * 10;
     const numResults = 10;
     const url = `https://serpapi.com/search?api_key=${SERPAPI_KEY}&q=${defaultSearch}&gl=us&hl=en&safe=active&start=${start}&num=${numResults}`;
@@ -34,6 +38,4 @@ const showAllWebsites = async (req, res) => {
   }
 };
 
-export {
-  showAllWebsites,
-};
+export { showAllWebsites };
