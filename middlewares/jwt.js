@@ -2,19 +2,21 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
+// init
+const api_url = process.env.API_URL;
+
 // routers
 const authJwt = async (req, res, next) => {
   try {
-    const api_url = process.env.API_URL;
     const arr = [
       { url: `${api_url}/auth/signUp`, method: "POST" },
       { url: `${api_url}/auth/signIn`, method: "POST" },
       { url: `${api_url}/auth/sendPassEmail`, method: "POST" },
       { url: `${api_url}/auth/activeResetPass`, method: "POST" },
       { url: `${api_url}/auth/resetPassword`, method: "POST" },
+      { url: `${api_url}/resource/showAllWebsites`, method: "GET" },
       { url: /^\/api\/v1\/auth\/token\/.+$/, method: "GET" },
     ];
-
     for (let i = 0; i < arr.length; i++) {
       if (typeof arr[i].url === "string") {
         if (req.url === arr[i].url && req.method === arr[i].method) {

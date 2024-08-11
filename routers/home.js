@@ -1,24 +1,7 @@
-// // packages
-// const express = require("express");
-
-// // imports
-// const {
-//   showAllVideos,
-//   showAllChannels,
-//   showAllHistory,
-//   deleteAllHistory,
-//   channel,
-//   video,
-//   showVideoComments,
-//   addComment,
-//   editComment,
-//   deleteComment,
-//   showVideoReactions,
-//   addReaction,
-//   deleteReaction,
-// } = require("../controllers/home/homeController");
-
+// packages
 import express from "express";
+
+// imports
 import {
   showAllVideos,
   showAllChannels,
@@ -54,5 +37,4 @@ homeRouter.post("/video/add/reaction", addReaction);
 homeRouter.delete("/video/delete/reaction", deleteReaction);
 
 // exports
-// module.exports = homeRouter;
 export default homeRouter;

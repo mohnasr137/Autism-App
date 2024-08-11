@@ -3,8 +3,6 @@ import express from "express";
 import path from "path";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
-dotenv.config();
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +18,7 @@ import authJwt from "./middlewares/jwt.js";
 const app = express();
 const port = process.env.PORT;
 const url = process.env.API_URL;
+const connectionString = process.env.CONNECTION_STRING;
 
 // middlewares
 app.use(cors());
@@ -27,7 +26,11 @@ app.options("*", cors());
 app.use(express.json());
 app.use(
   `${url}/uploads`,
-  express.static(path.join(__dirname, "/images/uploads"))
+  express.static(path.join(__dirname, "images", "uploads"))
+);
+app.use(
+  `${url}/portfolio`,
+  express.static(path.join(__dirname, "images", "portfolio"))
 );
 app.use(authJwt);
 
@@ -45,7 +48,7 @@ app.get(`/:error`, (req, res) => {
 
 // connection
 mongoose
-  .connect(process.env.CONNECTION_STRING)
+  .connect(connectionString)
   .then(() => {
     console.log("mongoose connection successfully");
   })
