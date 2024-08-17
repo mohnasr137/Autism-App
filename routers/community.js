@@ -1,6 +1,7 @@
 // packages
 import express from "express";
 import multer from "multer";
+import path from "path";
 
 // imports
 import {
@@ -16,7 +17,9 @@ const storage = multer.diskStorage({
     cb(null, "images/uploads/");
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+    const code = `${Math.floor(100000 + Math.random() * 900000)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + "-" + code + ext);
   },
 });
 const upload = multer({

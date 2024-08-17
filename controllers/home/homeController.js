@@ -399,31 +399,27 @@ const showVideoComments = async (req, res) => {
       return res.status(400).json({ error: "Video ID is required." });
     }
 
-    let existingVideo;
-    if (commentsSkip > 0) {
-      existingVideo = await Video.aggregate([
-        { $match: { videoId } },
-        {
-          $project: {
-            comments: { $slice: ["$comments", commentsSkip * 10, 10] },
-          },
+    let existingVideo = await Video.aggregate([
+      { $match: { videoId } },
+      {
+        $project: {
+          comments: { $slice: ["$comments", commentsSkip * 10, 10] },
         },
-      ]);
-      existingVideo = existingVideo[0];
-    } else {
-      existingVideo = await Video.aggregate([
-        { $match: { videoId } },
-        { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
-      ]);
-      existingVideo = existingVideo[0];
-    }
+      },
+    ]);
+    existingVideo = existingVideo[0];
+
     if (!existingVideo || existingVideo.length == 0) {
       return res.status(400).json({ error: "Video not found" });
     }
 
     let fullData = [];
-    for (let i = 0; i < existingVideo.comments.length; i++) {
-      let comment = await videoComment.findById(existingVideo.comments[i]);
+    for (let commentId in existingVideo.comments) {
+      let comment = await Video.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(commentId) } },
+        { $addFields: { subcomments: { $slice: ["$subcomments", 0, 2] } } },
+      ]);
+      comment = comment[0];
       if (comment) {
         fullData.push(comment);
       }
@@ -435,13 +431,59 @@ const showVideoComments = async (req, res) => {
   }
 };
 
+// const showVideoComments = async (req, res) => {
+//   try {
+//     const { commentsSkip, videoId } = req.query;
+//     if (!videoId) {
+//       return res.status(400).json({ error: "Video ID is required." });
+//     }
+
+//     let existingVideo;
+//     if (commentsSkip > 0) {
+//       existingVideo = await Video.aggregate([
+//         { $match: { videoId } },
+//         {
+//           $project: {
+//             comments: { $slice: ["$comments", commentsSkip * 10, 10] },
+//           },
+//         },
+//       ]);
+//       existingVideo = existingVideo[0];
+//     } else {
+//       existingVideo = await Video.aggregate([
+//         { $match: { videoId } },
+//         { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
+//       ]);
+//       existingVideo = existingVideo[0];
+//     }
+//     if (!existingVideo || existingVideo.length == 0) {
+//       return res.status(400).json({ error: "Video not found" });
+//     }
+
+//     let fullData = [];
+//     for (let i = 0; i < existingVideo.comments.length; i++) {
+//       let comment = await videoComment.findById(existingVideo.comments[i]);
+//       if (comment) {
+//         fullData.push(comment);
+//       }
+//     }
+
+//     return res.status(200).json({ fullData });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
 const addComment = async (req, res) => {
   try {
     const userId = req.userId;
     const { videoId } = req.query;
-    const { comment } = req.body;
+    const { comment, method, parentCommentId } = req.body;
     if (!videoId) {
       return res.status(400).json({ error: "Video ID is required." });
+    }
+    if (!method) {
+      return res.status(400).json({ error: "Method is required." });
     }
     if (!comment || comment.length == 0) {
       return res.status(400).json({ error: "Comment is required." });
@@ -469,25 +511,134 @@ const addComment = async (req, res) => {
         .json({ error: "Comment contains restricted content." });
     }
 
-    let newComment = new videoComment({
-      userId,
-      videoId,
-      comment,
-    });
-    newComment = await newComment.save();
+    if (method == "Comment") {
+      let newComment = new videoComment({
+        userId,
+        videoId,
+        comment,
+      });
+      newComment = await newComment.save();
 
-    await Video.updateOne(
-      { videoId },
-      {
-        $push: { comments: newComment._id },
-        $inc: { commentsCount: 1 },
+      await Video.updateOne(
+        { videoId },
+        {
+          $push: { comments: newComment._id },
+          $inc: { commentsCount: 1 },
+        }
+      );
+    } else {
+      if (!parentCommentId) {
+        return res
+          .status(400)
+          .json({ error: "Parent comment ID is required." });
       }
-    );
-    return res.status(200).json({ message: "add comment successfully" });
+      let parent = await videoComment.findOne(
+        { _id: parentCommentId },
+        { subcomment: 1, parentCommentId: 1 }
+      );
+      if (!parent) {
+        return res.status(404).json({ error: "Parent comment not found" });
+      }
+
+      if (parent.subcomment) {
+        let newComment = new videoComment({
+          userId,
+          videoId,
+          comment,
+          parentCommentId: parent.parentCommentId,
+          subcomment: true,
+        });
+        newComment = await newComment.save();
+        await videoComment.updateOne(
+          { _id: parent.parentCommentId },
+          {
+            $push: { subcomments: newComment._id },
+            $inc: { subcommentsNumber: 1 },
+          }
+        );
+      } else {
+        let newComment = new videoComment({
+          userId,
+          videoId,
+          comment,
+          parentCommentId: parent._id,
+          subcomment: true,
+        });
+        newComment = await newComment.save();
+        await videoComment.updateOne(
+          { _id: parent._id },
+          {
+            $push: { subcomments: newComment._id },
+            $inc: { subcommentsNumber: 1 },
+          }
+        );
+      }
+      await Video.updateOne(
+        { videoId },
+        {
+          $inc: { commentsCount: 1 },
+        }
+      );
+    }
+    return res.status(200).json({ message: "Add comment successfully" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// const addComment = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const { videoId } = req.query;
+//     const { comment } = req.body;
+//     if (!videoId) {
+//       return res.status(400).json({ error: "Video ID is required." });
+//     }
+//     if (!comment || comment.length == 0) {
+//       return res.status(400).json({ error: "Comment is required." });
+//     }
+
+//     const existingVideo = await Video.findOne(
+//       { videoId },
+//       { commentsCount: 1 }
+//     );
+//     if (!existingVideo) {
+//       return res.status(404).json({ error: "Video not found" });
+//     }
+
+//     const data = { value: comment };
+//     const url = "https://moderationapi.com/api/v1/moderate/text";
+//     const analysis = await axios.post(url, data, {
+//       headers: {
+//         Authorization: `Bearer ${process.env.MODERATION_KEY}`,
+//         "Content-Type": "application/json",
+//       },
+//     });
+//     if (analysis.data.flagged) {
+//       return res
+//         .status(400)
+//         .json({ error: "Comment contains restricted content." });
+//     }
+
+//     let newComment = new videoComment({
+//       userId,
+//       videoId,
+//       comment,
+//     });
+//     newComment = await newComment.save();
+
+//     await Video.updateOne(
+//       { videoId },
+//       {
+//         $push: { comments: newComment._id },
+//         $inc: { commentsCount: 1 },
+//       }
+//     );
+//     return res.status(200).json({ message: "add comment successfully" });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
 
 const editComment = async (req, res) => {
   try {
@@ -551,16 +702,40 @@ const deleteComment = async (req, res) => {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    await videoComment.deleteOne({ _id: commentId });
-    await Video.updateOne(
-      { videoId },
-      {
-        $pull: { comments: commentId },
-        $inc: { commentsCount: -1 },
-      }
+    const comment = await videoComment.findOne(
+      { _id: commentId },
+      { subcomment: 1, parentCommentId: 1 }
     );
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    if (!comment.subcomment) {
+      await videoComment.deleteOne({ _id: commentId });
+      await Video.updateOne(
+        { videoId },
+        {
+          $pull: { comments: commentId },
+          $inc: { commentsCount: -1 },
+        }
+      );
+    } else {
+      await videoComment.deleteOne({ _id: commentId });
+      await videoComment.updateOne(
+        { _id: comment.parentCommentId },
+        {
+          $pull: { subcomments: commentId },
+          $inc: { subcommentsNumber: -1 },
+        }
+      );
+      await Video.updateOne(
+        { videoId },
+        {
+          $inc: { commentsCount: -1 },
+        }
+      );
+    }
 
-    return res.status(200).json({ message: "delete comment successfully" });
+    return res.status(200).json({ message: "Delete comment successfully" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

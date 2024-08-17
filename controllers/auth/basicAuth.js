@@ -15,7 +15,11 @@ const app_url = process.env.APP_URL;
 const signUp = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
-    const image = req.protocol + "://" + req.get("host") + path.join(`${url}/portfolio`, "simple.jpg");
+    const image =
+      req.protocol +
+      "://" +
+      req.get("host") +
+      path.join(`${url}/portfolio`, "simple.jpg");
     if (confirmPassword !== password) {
       return res
         .status(400)
@@ -35,7 +39,7 @@ const signUp = async (req, res) => {
         { id: existingUser._id, code: code },
         process.env.SECRET,
         {
-          expiresIn: "24h",
+          expiresIn: "30d",
         }
       );
       const link =
@@ -59,7 +63,7 @@ const signUp = async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ id: user._id, code: code }, process.env.SECRET, {
-      expiresIn: "24h",
+      expiresIn: "30d",
     });
     const link =
       req.protocol + "://" + req.get("host") + `/api/v1/auth/token/${token}`;
@@ -89,7 +93,7 @@ const signIn = async (req, res) => {
     }
 
     const token = jwt.sign({ id: existingUser._id }, process.env.SECRET, {
-      expiresIn: "24h",
+      expiresIn: "30d",
     });
     const userData = {
       name: existingUser.name,

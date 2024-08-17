@@ -42,37 +42,48 @@ const postSchema = mongoose.Schema(
         trim: true,
       },
     ],
-    commentNumber: {
+    reactions: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    commentsNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    repostNumber: {
+    reactionsNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    likeNumber: {
+    repostsNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    loveNumber: {
+    likesNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    celebrateNumber: {
+    lovesNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    insightfulNumber: {
+    celebratesNumber: {
       type: Number,
       min: 0,
       default: 0,
     },
-    funnyNumber: {
+    insightfulsNumber: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    funnysNumber: {
       type: Number,
       min: 0,
       default: 0,
@@ -85,4 +96,3 @@ const postSchema = mongoose.Schema(
 
 const Post = mongoose.model("Post", postSchema);
 export default Post;
-
