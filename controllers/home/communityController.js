@@ -19,6 +19,8 @@ const Categories = [
   "Science & Technology",
 ];
 
+// user posts
+
 // routers
 const showAllPosts = async (req, res) => {
   try {
@@ -30,7 +32,42 @@ const showAllPosts = async (req, res) => {
     if (randomPosts.length == 0) {
       return res.status(404).json({ error: "Posts not found" });
     }
+
+    for (let post of randomPosts) {
+      await Post.updateOne({ _id: post._id }, { $inc: { viewCount: 1 } });
+    }
+
     return res.status(200).json({ randomPosts });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const showMyPosts = async (req, res) => {
+  try {
+    const userId = req.userId;
+    let { postSkip } = req.query;
+
+    let existingUser;
+    if (postSkip > 0) {
+      existingUser = await User.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+        {
+          $project: {
+            posts: { $slice: ["$posts", postSkip * 10, 10] },
+          },
+        },
+      ]);
+      existingUser = existingUser[0];
+    } else {
+      const existingUser = await User.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+        { $addFields: { posts: { $slice: ["$posts", 0, 10] } } },
+      ]);
+      existingUser = existingUser[0];
+    }
+
+    return res.status(200).json({ existingUser });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -153,7 +190,7 @@ const createPost = async (req, res) => {
 
 const editPost = async (req, res) => {
   try {
-    const { method, postId } = req.body;
+    const { method, postId } = req.query;
     if (!method) {
       return res.status(400).json({ error: "Method is required." });
     }
@@ -215,7 +252,7 @@ const editPost = async (req, res) => {
 
 const deletePost = async (req, res) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.query;
     if (!postId) {
       return res.status(400).json({ error: "Post ID is required." });
     }
@@ -244,4 +281,375 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { showAllPosts, post, createPost, editPost, deletePost };
+const showPostComments = async (req, res) => {
+  try {
+    const { commentsSkip, postId } = req.query;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+
+    let existingPost = await Post.aggregate([
+      { $match: { postId } },
+      {
+        $project: {
+          comments: { $slice: ["$comments", commentsSkip * 10, 10] },
+        },
+      },
+    ]);
+    existingPost = existingPost[0];
+
+    if (!existingPost || existingPost.length == 0) {
+      return res.status(400).json({ error: "Post not found" });
+    }
+
+    let fullData = [];
+    for (let commentId in existingPost.comments) {
+      let comment = await Post.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(commentId) } },
+        { $addFields: { subcomments: { $slice: ["$subcomments", 0, 2] } } },
+      ]);
+      comment = comment[0];
+      if (comment) {
+        fullData.push(comment);
+      }
+    }
+
+    return res.status(200).json({ fullData });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const addComment = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { postId } = req.query;
+    const { comment, method, parentCommentId } = req.body;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!method) {
+      return res.status(400).json({ error: "Method is required." });
+    }
+    if (!comment || comment.length == 0) {
+      return res.status(400).json({ error: "Comment is required." });
+    }
+
+    const existingPost = await Post.findOne({ postId }, { commentsCount: 1 });
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const data = { value: comment };
+    const url = "https://moderationapi.com/api/v1/moderate/text";
+    const analysis = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.MODERATION_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (analysis.data.flagged) {
+      return res
+        .status(400)
+        .json({ error: "Comment contains restricted content." });
+    }
+
+    if (method == "Comment") {
+      let newComment = new postComment({
+        userId,
+        postId,
+        comment,
+      });
+      newComment = await newComment.save();
+
+      await Post.updateOne(
+        { postId },
+        {
+          $push: { comments: newComment._id },
+          $inc: { commentsCount: 1 },
+        }
+      );
+    } else {
+      if (!parentCommentId) {
+        return res
+          .status(400)
+          .json({ error: "Parent comment ID is required." });
+      }
+      let parent = await postComment.findOne(
+        { _id: parentCommentId },
+        { subcomment: 1, parentCommentId: 1 }
+      );
+      if (!parent) {
+        return res.status(404).json({ error: "Parent comment not found" });
+      }
+
+      if (parent.subcomment) {
+        let newComment = new postComment({
+          userId,
+          postId,
+          comment,
+          parentCommentId: parent.parentCommentId,
+          subcomment: true,
+        });
+        newComment = await newComment.save();
+        await postComment.updateOne(
+          { _id: parent.parentCommentId },
+          {
+            $push: { subcomments: newComment._id },
+            $inc: { subcommentsNumber: 1 },
+          }
+        );
+      } else {
+        let newComment = new postComment({
+          userId,
+          postId,
+          comment,
+          parentCommentId: parent._id,
+          subcomment: true,
+        });
+        newComment = await newComment.save();
+        await postComment.updateOne(
+          { _id: parent._id },
+          {
+            $push: { subcomments: newComment._id },
+            $inc: { subcommentsNumber: 1 },
+          }
+        );
+      }
+      await Post.updateOne(
+        { postId },
+        {
+          $inc: { commentsCount: 1 },
+        }
+      );
+    }
+    return res.status(200).json({ message: "Add comment successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const editComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.query;
+    const { newComment } = req.body;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!commentId) {
+      return res.status(400).json({ error: "Comment ID is required." });
+    }
+    if (!newComment || newComment.length == 0) {
+      return res.status(400).json({ error: "New Comment is required." });
+    }
+
+    const existingPost = await Post.findOne({ postId }, { _id: 1 });
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const data = { value: newComment };
+    const url = "https://moderationapi.com/api/v1/moderate/text";
+    const analysis = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.MODERATION_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (analysis.data.flagged) {
+      return res
+        .status(400)
+        .json({ error: "New Comment contains restricted content." });
+    }
+
+    await postComment.updateOne(
+      { _id: commentId },
+      { $set: { comment: newComment } }
+    );
+
+    return res.status(200).json({ message: "edit comment successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.query;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!commentId) {
+      return res.status(400).json({ error: "Comment ID is required." });
+    }
+
+    const existingPost = await Video.findOne({ postId }, { commentsCount: 1 });
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const comment = await postComment.findOne(
+      { _id: commentId },
+      { subcomment: 1, parentCommentId: 1 }
+    );
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    if (!comment.subcomment) {
+      await postComment.deleteOne({ _id: commentId });
+      await Post.updateOne(
+        { postId },
+        {
+          $pull: { comments: commentId },
+          $inc: { commentsCount: -1 },
+        }
+      );
+    } else {
+      await postComment.deleteOne({ _id: commentId });
+      await postComment.updateOne(
+        { _id: comment.parentCommentId },
+        {
+          $pull: { subcomments: commentId },
+          $inc: { subcommentsNumber: -1 },
+        }
+      );
+      await Post.updateOne(
+        { postId },
+        {
+          $inc: { commentsCount: -1 },
+        }
+      );
+    }
+
+    return res.status(200).json({ message: "Delete comment successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const showPostReactions = async (req, res) => {
+  try {
+    const { reactionsSkip, postId } = req.query;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+
+    let existingPost;
+    if (reactionsSkip > 0) {
+      existingPost = await Post.aggregate([
+        { $match: { postId } },
+        {
+          $project: {
+            reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
+          },
+        },
+      ]);
+      existingPost = existingPost[0];
+    } else {
+      existingPost = await Post.aggregate([
+        { $match: { postId } },
+        { $addFields: { reactions: { $slice: ["$reactions", 0, 10] } } },
+      ]);
+      existingPost = existingPost[0];
+    }
+    if (!existingPost || existingPost.length == 0) {
+      return res.status(400).json({ error: "Post not found" });
+    }
+
+    let fullData = [];
+    for (let i = 0; i < existingPost.reactions.length; i++) {
+      let reaction = await postReaction.findById(existingPost.reactions[i]);
+      if (reaction) {
+        fullData.push(reaction);
+      }
+    }
+
+    return res.status(200).json({ fullData });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const addReaction = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { postId } = req.query;
+    const { reaction } = req.body;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!reaction || reaction.length == 0) {
+      return res.status(400).json({ error: "Reaction is required." });
+    }
+
+    const existingPost = await Post.findOne({ postId }, { reactionsCount: 1 });
+    if (!existingPost) {
+      return res.status(400).json({ error: "Post not found" });
+    }
+
+    let newReaction = new postReaction({
+      userId,
+      postId,
+      reaction,
+    });
+    newReaction = await newReaction.save();
+
+    await Post.updateOne(
+      { postId },
+      {
+        $push: { reactions: newReaction._id },
+        $inc: { reactionsCount: 1 },
+      }
+    );
+    return res.status(200).json({ message: "add reaction successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteReaction = async (req, res) => {
+  try {
+    const { postId, reactionId } = req.query;
+    if (!postId) {
+      return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!reactionId) {
+      return res.status(400).json({ error: "Reaction ID is required." });
+    }
+
+    const existingPost = await Post.findOne({ postId }, { reactionsCount: 1 });
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    await postReaction.deleteOne({ _id: reactionId });
+
+    await Post.updateOne(
+      { postId },
+      {
+        $pull: { reactions: reactionId },
+        $inc: { reactionsCount: -1 },
+      }
+    );
+
+    return res.status(200).json({ message: "delete reaction successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export {
+  showAllPosts,
+  showMyPosts,
+  post,
+  createPost,
+  editPost,
+  deletePost,
+  showPostComments,
+  addComment,
+  editComment,
+  deleteComment,
+  showPostReactions,
+  addReaction,
+  deleteReaction,
+};

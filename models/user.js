@@ -40,6 +40,12 @@ const userSchema = mongoose.Schema({
   code: {
     type: String,
   },
+  posts: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
   history: [
     {
       type: String,

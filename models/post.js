@@ -48,6 +48,11 @@ const postSchema = mongoose.Schema(
         trim: true,
       },
     ],
+    viewCount: {
+      required: true,
+      type: Number,
+      default: 0,
+    },
     commentsNumber: {
       type: Number,
       min: 0,

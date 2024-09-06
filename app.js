@@ -12,6 +12,7 @@ import authRouter from "./routers/auth.js";
 import homeRouter from "./routers/home.js";
 import resourceRouter from "./routers/resource.js";
 import communityRouter from "./routers/community.js";
+import testingRouter from "./routers/testing.js";
 import authJwt from "./middlewares/jwt.js";
 
 // init
@@ -39,6 +40,7 @@ app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
 // app.use(`${url}/resource`, resourceRouter);
 app.use(`${url}/community`, communityRouter);
+app.use(`${url}/testing`, testingRouter);
 app.get(`/:error`, (req, res) => {
   const { error } = req.params;
   return res.send(
