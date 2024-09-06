@@ -5,9 +5,19 @@ import path from "path";
 
 // imports
 import {
-  createPost,
   showAllPosts,
+  showMyPosts,
   post,
+  createPost,
+  editPost,
+  deletePost,
+  showPostComments,
+  addComment,
+  editComment,
+  deleteComment,
+  showPostReactions,
+  addReaction,
+  deleteReaction,
 } from "../controllers/home/communityController.js";
 
 // init
@@ -35,9 +45,19 @@ const upload = multer({
 });
 
 // routers
-communityRouter.post("/createPost", upload.array("files", 5), createPost);
 communityRouter.get("/showAllPosts", showAllPosts);
+communityRouter.get("/showMyPosts", showMyPosts);
 communityRouter.get("/post", post);
+communityRouter.post("/createPost", upload.array("files", 5), createPost);
+communityRouter.patch("/editPost", editPost);
+communityRouter.delete("/deletePost", deletePost);
+communityRouter.get("/post/show/comments", showPostComments);
+communityRouter.post("/post/add/comment", addComment);
+communityRouter.patch("/post/edit/comment", editComment);
+communityRouter.delete("/post/delete/comment", deleteComment);
+communityRouter.get("/post/show/reactions", showPostReactions);
+communityRouter.post("/post/add/reaction", addReaction);
+communityRouter.delete("/post/delete/reaction", deleteReaction);
 
 // exports
 export default communityRouter;
