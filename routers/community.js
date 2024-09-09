@@ -49,7 +49,7 @@ communityRouter.get("/showAllPosts", showAllPosts);
 communityRouter.get("/showMyPosts", showMyPosts);
 communityRouter.get("/post", post);
 communityRouter.post("/createPost", upload.array("files", 5), createPost);
-communityRouter.patch("/editPost", editPost);
+communityRouter.patch("/editPost", upload.array("files", 5), editPost);
 communityRouter.delete("/deletePost", deletePost);
 communityRouter.get("/post/show/comments", showPostComments);
 communityRouter.post("/post/add/comment", addComment);

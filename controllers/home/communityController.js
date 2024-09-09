@@ -34,7 +34,7 @@ const showAllPosts = async (req, res) => {
     }
 
     for (let post of randomPosts) {
-      await Post.updateOne({ _id: post._id }, { $inc: { viewCount: 1 } });
+      await Post.updateOne({ _id: post._id }, { $inc: { outerViewCount: 1 } });
     }
 
     return res.status(200).json({ randomPosts });
@@ -46,7 +46,7 @@ const showAllPosts = async (req, res) => {
 const showMyPosts = async (req, res) => {
   try {
     const userId = req.userId;
-    let { postSkip } = req.query;
+    const { postSkip } = req.query;
 
     let existingUser;
     if (postSkip > 0) {
@@ -60,14 +60,14 @@ const showMyPosts = async (req, res) => {
       ]);
       existingUser = existingUser[0];
     } else {
-      const existingUser = await User.aggregate([
+      existingUser = await User.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(userId) } },
         { $addFields: { posts: { $slice: ["$posts", 0, 10] } } },
       ]);
       existingUser = existingUser[0];
     }
 
-    return res.status(200).json({ existingUser });
+    return res.status(200).json({ myPosts: existingUser.posts });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -79,13 +79,9 @@ const post = async (req, res) => {
     if (!postId) {
       return res.status(200).json({ message: "Please enter post id" });
     }
+
     let existingPost;
-    if (commentSkip == 0) {
-      existingPost = await Post.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
-        { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
-      ]);
-    } else if (commentSkip > 0) {
+    if (commentSkip > 0) {
       existingPost = await Post.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(postId) } },
         {
@@ -94,11 +90,23 @@ const post = async (req, res) => {
           },
         },
       ]);
+      existingPost = existingPost[0];
+    } else {
+      existingPost = await Post.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
+        { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
+      ]);
+      existingPost = existingPost[0];
     }
+
     if (!existingPost) {
       return res.status(200).json({ message: "Invalid post ID" });
     }
-    return res.status(200).json({ post: existingPost[0] });
+    let a = await Post.updateOne(
+      { _id: existingPost._id },
+      { $inc: { innerViewCount: 1 } }
+    );
+    return res.status(200).json({ post: existingPost });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -180,6 +188,15 @@ const createPost = async (req, res) => {
       });
       await newPost.save();
     }
+
+    await User.updateOne(
+      { _id: userId },
+      {
+        $push: { posts: newPost._id },
+        $inc: { postsCount: 1 },
+      }
+    );
+
     return res
       .status(200)
       .json({ newPost, message: "Post created successfuly.." });
@@ -190,7 +207,7 @@ const createPost = async (req, res) => {
 
 const editPost = async (req, res) => {
   try {
-    const { method, postId } = req.query;
+    const { method, postId } = req.body;
     if (!method) {
       return res.status(400).json({ error: "Method is required." });
     }

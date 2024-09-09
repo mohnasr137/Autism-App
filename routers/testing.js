@@ -3,7 +3,12 @@ import express from "express";
 import multer from "multer";
 
 // imports
-import { testingUpload } from "../controllers/home/testingController.js";
+import {
+  userData,
+  coloring,
+  handWriting,
+  childFace,
+} from "../controllers/home/testingController.js";
 
 // init
 const testingRouter = express.Router();
@@ -21,6 +26,9 @@ const upload = multer({
 });
 
 // routers
-testingRouter.post("/upload", upload.single("file"), testingUpload);
+testingRouter.post("/userData", userData);
+testingRouter.post("/coloring", upload.single("file"), coloring);
+testingRouter.post("/handWriting", upload.single("file"), handWriting);
+testingRouter.post("/childFace", upload.single("file"), childFace);
 
 export default testingRouter;

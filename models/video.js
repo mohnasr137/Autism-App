@@ -9,22 +9,32 @@ const videoSchema = mongoose.Schema({
   likeCount: {
     required: true,
     type: Number,
+    min: 0,
+    default: 0,
   },
   dislikeCount: {
     required: true,
     type: Number,
+    min: 0,
+    default: 0,
   },
   viewCount: {
     required: true,
     type: Number,
+    min: 0,
+    default: 0,
   },
   commentsCount: {
     required: true,
     type: Number,
+    min: 0,
+    default: 0,
   },
   reactionsCount: {
     required: true,
     type: Number,
+    min: 0,
+    default: 0,
   },
   comments: [
     {

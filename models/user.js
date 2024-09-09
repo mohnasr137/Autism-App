@@ -40,6 +40,11 @@ const userSchema = mongoose.Schema({
   code: {
     type: String,
   },
+  postsCount: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
   posts: [
     {
       type: String,
