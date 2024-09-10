@@ -2,13 +2,13 @@
 import express from "express";
 
 // imports
-import { showAllWebsites } from "../controllers/home/resourceController.js"
+import { offlineWebsites } from "../controllers/home/resourceController.js";
 
 // init
 const resourceRouter = express.Router();
 
 // routers
-resourceRouter.get("/showAllWebsites", showAllWebsites);
+resourceRouter.get("/showAllWebsites", offlineWebsites);
 
 // exports
 export default resourceRouter;
