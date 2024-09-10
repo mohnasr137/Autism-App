@@ -38,7 +38,7 @@ app.use(authJwt);
 // routers
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
-// app.use(`${url}/resource`, resourceRouter);
+app.use(`${url}/resource`, resourceRouter);
 app.use(`${url}/community`, communityRouter);
 app.use(`${url}/testing`, testingRouter);
 app.get(`/:error`, (req, res) => {
