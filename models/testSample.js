@@ -32,13 +32,11 @@ const testSampleSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
-    methods: [
-      {
-        type: String,
-        required: true,
-        trim: true,
-      },
-    ],
+    methods: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     form: {
       type: Number,
       default: -1,
@@ -47,15 +45,15 @@ const testSampleSchema = mongoose.Schema(
       type: Number,
       default: -1,
     },
+    drawing: {
+      type: Number,
+      default: -1,
+    },
     coloring: {
       type: Number,
       default: -1,
     },
     handWriting: {
-      type: Number,
-      default: -1,
-    },
-    drawing: {
       type: Number,
       default: -1,
     },

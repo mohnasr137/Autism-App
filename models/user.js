@@ -40,6 +40,10 @@ const userSchema = mongoose.Schema({
   code: {
     type: String,
   },
+  activeTest: {
+    type: String,
+    default: "",
+  },
   postsCount: {
     type: Number,
     min: 0,
@@ -52,6 +56,12 @@ const userSchema = mongoose.Schema({
     },
   ],
   history: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  testSamples: [
     {
       type: String,
       trim: true,

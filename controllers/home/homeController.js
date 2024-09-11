@@ -186,7 +186,7 @@ const showAllHistory = async (req, res) => {
       ]);
       existingUser = existingUser[0];
     } else {
-      const existingUser = await User.aggregate([
+      existingUser = await User.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(userId) } },
         { $addFields: { history: { $slice: ["$history", 0, 10] } } },
       ]);
