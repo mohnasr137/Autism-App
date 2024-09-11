@@ -5,9 +5,13 @@ import multer from "multer";
 // imports
 import {
   userData,
+  getForm,
+  postForm,
+  childFace,
+  drawing,
   coloring,
   handWriting,
-  childFace,
+  testResult,
 } from "../controllers/home/testingController.js";
 
 // init
@@ -27,8 +31,12 @@ const upload = multer({
 
 // routers
 testingRouter.post("/userData", userData);
+testingRouter.get("/form", getForm);
+testingRouter.post("/form", postForm);
+testingRouter.post("/childFace", upload.single("file"), childFace);
+testingRouter.post("/drawing", upload.single("file"), drawing);
 testingRouter.post("/coloring", upload.single("file"), coloring);
 testingRouter.post("/handWriting", upload.single("file"), handWriting);
-testingRouter.post("/childFace", upload.single("file"), childFace);
+testingRouter.get("/testResult", testResult);
 
 export default testingRouter;
