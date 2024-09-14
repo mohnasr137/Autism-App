@@ -23,7 +23,7 @@ const testSampleSchema = mongoose.Schema(
       trim: true,
     },
     age: {
-      type: Number,
+      type: String,
       required: true,
       trim: true,
     },
