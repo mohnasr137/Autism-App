@@ -12,6 +12,8 @@ import {
   coloring,
   handWriting,
   testResult,
+  resultPdf,
+  recommendVideos,
 } from "../controllers/home/testingController.js";
 
 // init
@@ -38,5 +40,7 @@ testingRouter.post("/drawing", upload.single("file"), drawing);
 testingRouter.post("/coloring", upload.single("file"), coloring);
 testingRouter.post("/handWriting", upload.single("file"), handWriting);
 testingRouter.get("/testResult", testResult);
+testingRouter.get("/resultPdf", resultPdf);
+testingRouter.get("/recommendVideos", recommendVideos);
 
 export default testingRouter;
