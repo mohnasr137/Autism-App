@@ -57,6 +57,10 @@ const testSampleSchema = mongoose.Schema(
       type: Number,
       default: -1,
     },
+    result: {
+      type: Number,
+      default: -1,
+    },
   },
   {
     timestamps: true,
