@@ -20,6 +20,20 @@ const userSchema = mongoose.Schema({
     trim: true,
     match: /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
   },
+  dateOfBirth: {
+    type: Date,
+    required: true,
+  },
+  gender: {
+    type: String,
+    enum: ["male", "female"],
+    required: true,
+  },
+  image: {
+    required: true,
+    type: String,
+    trim: true,
+  },
   type: {
     type: String,
     default: "user",
@@ -31,11 +45,6 @@ const userSchema = mongoose.Schema({
   resetPass: {
     type: Boolean,
     default: false,
-  },
-  image: {
-    required: true,
-    type: String,
-    trim: true,
   },
   code: {
     type: String,
@@ -61,7 +70,19 @@ const userSchema = mongoose.Schema({
       trim: true,
     },
   ],
-  testSamples: [
+  favoriteVideos: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  testHistory: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  favoriteWebsites: [
     {
       type: String,
       trim: true,

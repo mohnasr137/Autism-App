@@ -16,6 +16,9 @@ import {
   showVideoReactions,
   addReaction,
   deleteReaction,
+  showFavorite,
+  addFavorite,
+  deleteFavorite,
 } from "../controllers/home/homeController.js";
 
 // init
@@ -35,6 +38,9 @@ homeRouter.delete("/video/delete/comment", deleteComment);
 homeRouter.get("/video/reactions", showVideoReactions);
 homeRouter.post("/video/add/reaction", addReaction);
 homeRouter.delete("/video/delete/reaction", deleteReaction);
+homeRouter.get("/favorite/show", showFavorite);
+homeRouter.post("/favorite/add", addFavorite);
+homeRouter.delete("/favorite/delete", deleteFavorite);
 
 // exports
 export default homeRouter;

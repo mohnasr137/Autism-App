@@ -1,5 +1,6 @@
 // packages
 import axios from "axios";
+import mongoose from "mongoose";
 
 // imports
 import Website from "../../models/website.js";
@@ -57,18 +58,15 @@ const onlineWebsites = async (req, res) => {
 
 const offlineWebsites = async (req, res) => {
   try {
-    const page = parseInt(req.query.page);
-    if (!page) {
-      return res.status(200).json({ error: "Please enter page number" });
+    const number = req.query;
+    if (!number) {
+      return res.status(200).json({ error: "Please enter number" });
     }
-    if (page == 0) {
-      return res.status(200).json({ error: "Invalid page number" });
-    }
-    if (page > 20) {
-      return res.status(404).json({ error: "page not found" });
+    if (number == 0) {
+      return res.status(200).json({ error: "Invalid number" });
     }
 
-    const fullData = await Website.aggregate([{ $match: { pageNum: page } }]);
+    const fullData = await Website.aggregate([{ $sample: { size: number } }]);
 
     return res.status(200).json({ fullData });
   } catch (error) {
@@ -76,4 +74,92 @@ const offlineWebsites = async (req, res) => {
   }
 };
 
-export { onlineWebsites, offlineWebsites };
+const showFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { favoriteSkip } = req.query;
+    if (!favoriteSkip) {
+      return res.status(400).json({ error: "favoriteSkip is required." });
+    }
+
+    let list = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $project: {
+          favoriteWebsites: {
+            $slice: [
+              { $reverseArray: "$favoriteWebsites" },
+              favoriteSkip * 20,
+              20,
+            ],
+          },
+        },
+      },
+    ]);
+    list = list[0];
+
+    const listDetails = list.favoriteWebsites.forEach(async (element) => {
+      const testData = await testSample.findOne({ _id: element });
+      return testData;
+    });
+    return res.status(200).json({ message: listDetails });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const addFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { websiteId } = req.query;
+    if (!websiteId) {
+      return res.status(400).json({ error: "Website ID is required." });
+    }
+
+    const existingWebsite = await Website.findOne({ websiteId }, { _id: 1 });
+    if (!existingWebsite) {
+      return res.status(404).json({ error: "Website not found" });
+    }
+
+    await User.updateOne(
+      { _id: userId },
+      { $push: { favoriteWebsites: websiteId } }
+    );
+
+    return res.status(200).json({ message: "add favorite successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { websiteId } = req.query;
+    if (!websiteId) {
+      return res.status(400).json({ error: "Website ID is required." });
+    }
+
+    const existingWebsite = await Website.findOne({ websiteId }, { _id: 1 });
+    if (!existingWebsite) {
+      return res.status(404).json({ error: "Website not found" });
+    }
+
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { favoriteWebsites: websiteId } }
+    );
+
+    return res.status(200).json({ message: "delete favorite successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export {
+  onlineWebsites,
+  offlineWebsites,
+  showFavorite,
+  addFavorite,
+  deleteFavorite,
+};

@@ -14,6 +14,8 @@ import {
   testResult,
   resultPdf,
   recommendVideos,
+  showAllHistory,
+  deleteHistory,
 } from "../controllers/home/testingController.js";
 
 // init
@@ -42,5 +44,7 @@ testingRouter.post("/handWriting", upload.single("file"), handWriting);
 testingRouter.get("/testResult", testResult);
 testingRouter.get("/resultPdf", resultPdf);
 testingRouter.get("/recommendVideos", recommendVideos);
+testingRouter.get("/history/showAll", showAllHistory);
+testingRouter.delete("/history/delete", deleteHistory);
 
 export default testingRouter;
