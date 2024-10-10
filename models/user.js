@@ -10,6 +10,7 @@ const userSchema = mongoose.Schema({
   email: {
     required: true,
     type: String,
+    unique: true,
     trim: true,
     match:
       /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
@@ -23,11 +24,29 @@ const userSchema = mongoose.Schema({
   dateOfBirth: {
     type: Date,
     required: true,
+    default: Date.now,
   },
   gender: {
     type: String,
     enum: ["male", "female"],
     required: true,
+    default: "not determined",
+  },
+  address: {
+    type: String,
+    default: "not determined",
+  },
+  phone: {
+    type: String,
+    default: "not determined",
+  },
+  facebookLink: {
+    type: String,
+    default: "not determined",
+  },
+  linkedinLink: {
+    type: String,
+    default: "not determined",
   },
   image: {
     required: true,

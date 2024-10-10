@@ -19,7 +19,7 @@ import {
   showFavorite,
   addFavorite,
   deleteFavorite,
-} from "../controllers/home/homeController.js";
+} from "../controllers/app/homeController.js";
 
 // init
 const homeRouter = express.Router();

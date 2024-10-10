@@ -7,7 +7,7 @@ import {
   showFavorite,
   addFavorite,
   deleteFavorite,
-} from "../controllers/home/resourceController.js";
+} from "../controllers/app/resourceController.js";
 
 // init
 const resourceRouter = express.Router();

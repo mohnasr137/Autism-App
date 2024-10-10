@@ -16,7 +16,7 @@ import {
   recommendVideos,
   showAllHistory,
   deleteHistory,
-} from "../controllers/home/testingController.js";
+} from "../controllers/app/testingController.js";
 
 // init
 const testingRouter = express.Router();
