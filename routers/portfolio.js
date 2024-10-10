@@ -5,8 +5,12 @@ import path from "path";
 
 // imports
 import {
-
-} from "../controllers/home/portfolioController.js"
+  imageUpload,
+  userData,
+  editUserData,
+  contactInfo,
+  editContactInfo,
+} from "../controllers/app/portfolioController.js";
 
 // init
 const portfolioRouter = express.Router();
@@ -34,6 +38,10 @@ const upload = multer({
 
 // routers
 portfolioRouter.post("/imageUpload", upload.single("file"), imageUpload);
-portfolioRouter.get("/userData",userData);
+portfolioRouter.get("/userData", userData);
+portfolioRouter.post("/editUserData", editUserData);
+portfolioRouter.get("/contactInfo", contactInfo);
+portfolioRouter.post("/editContactInfo", editContactInfo);
 
+// exports
 export default portfolioRouter;

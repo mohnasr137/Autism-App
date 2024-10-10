@@ -14,7 +14,9 @@ import {
   testResult,
   resultPdf,
   recommendVideos,
-} from "../controllers/home/testingController.js";
+  showAllHistory,
+  deleteHistory,
+} from "../controllers/app/testingController.js";
 
 // init
 const testingRouter = express.Router();
@@ -42,5 +44,7 @@ testingRouter.post("/handWriting", upload.single("file"), handWriting);
 testingRouter.get("/testResult", testResult);
 testingRouter.get("/resultPdf", resultPdf);
 testingRouter.get("/recommendVideos", recommendVideos);
+testingRouter.get("/history/showAll", showAllHistory);
+testingRouter.delete("/history/delete", deleteHistory);
 
 export default testingRouter;

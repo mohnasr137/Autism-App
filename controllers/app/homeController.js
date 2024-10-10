@@ -173,31 +173,52 @@ const showAllHistory = async (req, res) => {
   try {
     const userId = req.userId;
     let { historySkip } = req.query;
+    if (!historySkip) {
+      return res.status(400).json({ error: "historySkip is required." });
+    }
+    // if (historySkip == 0) {
+    //   return res.status(404).json({ error: "historySkip not valid" });
+    // }
 
-    let existingUser;
-    if (historySkip > 0) {
-      existingUser = await User.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-        {
-          $project: {
-            history: { $slice: ["$history", historySkip * 10, 10] },
+    // let existingUser;
+    // if (historySkip > 0) {
+    //   existingUser = await User.aggregate([
+    //     { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+    //     {
+    //       $project: {
+    //         history: { $slice: ["$history", historySkip * 10, 10] },
+    //       },
+    //     },
+    //   ]);
+    //   existingUser = existingUser[0];
+    //   console.log(existingUser);
+    // } else {
+    //   existingUser = await User.aggregate([
+    //     { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+    //     { $addFields: { history: { $slice: ["$history", 0, 10] } } },
+    //   ]);
+    //   existingUser = existingUser[0];
+    //   console.log(existingUser);
+    // }
+
+    let existingUser = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $project: {
+          history: {
+            $slice: [{ $reverseArray: "$history" }, historySkip * 10, 10],
           },
         },
-      ]);
-      existingUser = existingUser[0];
-    } else {
-      existingUser = await User.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-        { $addFields: { history: { $slice: ["$history", 0, 10] } } },
-      ]);
-      existingUser = existingUser[0];
-    }
+      },
+    ]);
+    existingUser = existingUser[0];
 
     const videosList = existingUser.history;
     let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
     });
+
     const channelsList = videos.data.items.map((item) => {
       return item.snippet.channelId;
     });
@@ -858,6 +879,121 @@ const deleteReaction = async (req, res) => {
   }
 };
 
+const showFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { favoriteSkip } = req.query;
+    if (!favoriteSkip) {
+      return res.status(400).json({ error: "favoriteSkip is required." });
+    }
+
+    // const list = await User.findOne(
+    //   { _id: userId },
+    //   { favoriteVideos: { $slice: [(favoriteSkip - 1) * 20, 20] } }
+    // );
+
+    let list = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $project: {
+          favoriteVideos: {
+            $slice: [
+              { $reverseArray: "$favoriteVideos" },
+              favoriteSkip * 10,
+              10,
+            ],
+          },
+        },
+      },
+    ]);
+    list = list[0];
+
+    const videosList = list.favoriteVideos;
+    let videos = await youtube.videos.list({
+      part: "snippet,contentDetails,statistics",
+      id: videosList.join(","),
+    });
+
+    const channelsList = videos.data.items.map((item) => {
+      return item.snippet.channelId;
+    });
+    let channels = await youtube.channels.list({
+      part: "snippet,contentDetails,statistics",
+      id: channelsList.join(","),
+    });
+
+    videos = videos.data.items.map((item) => {
+      return {
+        id: item.id,
+        title: item.snippet.title,
+        publishedAt: item.snippet.publishedAt,
+        thumbnails: item.snippet.thumbnails,
+        url: `https://www.youtube.com/watch?v=${item.id}`,
+      };
+    });
+    channels = channels.data.items.map((item) => {
+      return {
+        id: item.id,
+        title: item.snippet.title,
+        thumbnails: item.snippet.thumbnails,
+        url: `https://www.youtube.com/watch?v=${item.snippet.customUrl}`,
+      };
+    });
+    const fullData = { videos, channels };
+    return res.status(200).json({ fullData });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const addFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { videoId } = req.query;
+    if (!videoId) {
+      return res.status(400).json({ error: "Video ID is required." });
+    }
+
+    const existingVideo = await Video.findOne({ videoId }, { _id: 1 });
+    if (!existingVideo) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    await User.updateOne(
+      { _id: userId },
+      { $push: { favoriteVideos: videoId } }
+    );
+
+    return res.status(200).json({ message: "add favorite successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const deleteFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { videoId } = req.query;
+    if (!videoId) {
+      return res.status(400).json({ error: "Video ID is required." });
+    }
+
+    const existingVideo = await Video.findOne({ videoId }, { _id: 1 });
+    if (!existingVideo) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { favoriteVideos: videoId } }
+    );
+
+    return res.status(200).json({ message: "delete favorite successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   showAllVideos,
   showAllChannels,
@@ -872,4 +1008,7 @@ export {
   showVideoReactions,
   addReaction,
   deleteReaction,
+  showFavorite,
+  addFavorite,
+  deleteFavorite,
 };

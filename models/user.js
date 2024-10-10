@@ -10,6 +10,7 @@ const userSchema = mongoose.Schema({
   email: {
     required: true,
     type: String,
+    unique: true,
     trim: true,
     match:
       /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
@@ -19,6 +20,38 @@ const userSchema = mongoose.Schema({
     type: String,
     trim: true,
     match: /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
+  },
+  dateOfBirth: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  gender: {
+    type: String,
+    enum: ["male", "female"],
+    required: true,
+    default: "not determined",
+  },
+  address: {
+    type: String,
+    default: "not determined",
+  },
+  phone: {
+    type: String,
+    default: "not determined",
+  },
+  facebookLink: {
+    type: String,
+    default: "not determined",
+  },
+  linkedinLink: {
+    type: String,
+    default: "not determined",
+  },
+  image: {
+    required: true,
+    type: String,
+    trim: true,
   },
   type: {
     type: String,
@@ -31,11 +64,6 @@ const userSchema = mongoose.Schema({
   resetPass: {
     type: Boolean,
     default: false,
-  },
-  image: {
-    required: true,
-    type: String,
-    trim: true,
   },
   code: {
     type: String,
@@ -61,7 +89,19 @@ const userSchema = mongoose.Schema({
       trim: true,
     },
   ],
-  testSamples: [
+  favoriteVideos: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  testHistory: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  favoriteWebsites: [
     {
       type: String,
       trim: true,

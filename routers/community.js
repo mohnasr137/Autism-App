@@ -18,7 +18,7 @@ import {
   showPostReactions,
   addReaction,
   deleteReaction,
-} from "../controllers/home/communityController.js";
+} from "../controllers/app/communityController.js";
 
 // init
 const communityRouter = express.Router();

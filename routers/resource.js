@@ -2,13 +2,21 @@
 import express from "express";
 
 // imports
-import { offlineWebsites } from "../controllers/home/resourceController.js";
+import {
+  offlineWebsites,
+  showFavorite,
+  addFavorite,
+  deleteFavorite,
+} from "../controllers/app/resourceController.js";
 
 // init
 const resourceRouter = express.Router();
 
 // routers
 resourceRouter.get("/showAllWebsites", offlineWebsites);
+resourceRouter.get("/favorite/show", showFavorite);
+resourceRouter.post("/favorite/add", addFavorite);
+resourceRouter.delete("/favorite/delete", deleteFavorite);
 
 // exports
 export default resourceRouter;

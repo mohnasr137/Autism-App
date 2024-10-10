@@ -10,9 +10,10 @@ const __dirname = path.dirname(__filename);
 // imports
 import authRouter from "./routers/auth.js";
 import homeRouter from "./routers/home.js";
-import resourceRouter from "./routers/resource.js";
-import communityRouter from "./routers/community.js";
 import testingRouter from "./routers/testing.js";
+import communityRouter from "./routers/community.js";
+import resourceRouter from "./routers/resource.js";
+import portfolioRouter from "./routers/portfolio.js"
 import authJwt from "./middlewares/jwt.js";
 
 // init
@@ -38,10 +39,11 @@ app.use(authJwt);
 // routers
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/home`, homeRouter);
-app.use(`${url}/resource`, resourceRouter);
-app.use(`${url}/community`, communityRouter);
 app.use(`${url}/testing`, testingRouter);
-app.get(`/:error`, (req, res) => {
+app.use(`${url}/community`, communityRouter);
+app.use(`${url}/resource`, resourceRouter);
+app.use(`${url}/portfolio`, portfolioRouter);
+app.use(`/:error`, (req, res) => {
   const { error } = req.params;
   return res.send(
     `hi from error:- you write ( ${error} ) and there is no api like this`
