@@ -10,6 +10,9 @@ import {
   editUserData,
   contactInfo,
   editContactInfo,
+  aboutApp,
+  frequentQuestions,
+  LegalInformation,
 } from "../controllers/app/portfolioController.js";
 
 // init
@@ -42,6 +45,10 @@ portfolioRouter.get("/userData", userData);
 portfolioRouter.post("/editUserData", editUserData);
 portfolioRouter.get("/contactInfo", contactInfo);
 portfolioRouter.post("/editContactInfo", editContactInfo);
+portfolioRouter.get("/aboutApp", aboutApp);
+portfolioRouter.get("/frequentQuestions", frequentQuestions);
+portfolioRouter.get("/LegalInformation", LegalInformation);
+
 
 // exports
 export default portfolioRouter;
