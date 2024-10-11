@@ -47,7 +47,7 @@ portfolioRouter.get("/contactInfo", contactInfo);
 portfolioRouter.post("/editContactInfo", editContactInfo);
 portfolioRouter.get("/aboutApp", aboutApp);
 portfolioRouter.get("/frequentQuestions", frequentQuestions);
-portfolioRouter.get("/LegalInformation", LegalInformation);
+portfolioRouter.get("/legalInformation", LegalInformation);
 
 
 // exports
