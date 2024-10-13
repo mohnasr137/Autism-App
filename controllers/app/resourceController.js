@@ -58,7 +58,7 @@ const onlineWebsites = async (req, res) => {
 
 const offlineWebsites = async (req, res) => {
   try {
-    const number = req.query;
+    const { number } = req.query;
     if (!number) {
       return res.status(200).json({ error: "Please enter number" });
     }
@@ -66,7 +66,7 @@ const offlineWebsites = async (req, res) => {
       return res.status(200).json({ error: "Invalid number" });
     }
 
-    const fullData = await Website.aggregate([{ $sample: { size: number } }]);
+    const fullData = await Website.aggregate([{ $sample: { size: Number(number) } }]);
 
     return res.status(200).json({ fullData });
   } catch (error) {
