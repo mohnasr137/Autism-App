@@ -32,11 +32,21 @@ const showAllPosts = async (req, res) => {
       return res.status(404).json({ error: "Posts not found" });
     }
 
+    let data = [];
     for (let post of randomPosts) {
       await Post.updateOne({ _id: post._id }, { $inc: { outerViewCount: 1 } });
+      const user = await User.findOne(
+        { _id: post.userId },
+        { name: 1, email: 1, gender: 1, dateOfBirth: 1, image: 1, type: 1 }
+      );
+      if (user) {
+        data.push({ post, user });
+      } else {
+        await Post.deleteOne({ _id: post._id });
+      }
     }
 
-    return res.status(200).json({ randomPosts });
+    return res.status(200).json({ data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -46,27 +56,38 @@ const showMyPosts = async (req, res) => {
   try {
     const userId = req.userId;
     const { postSkip } = req.query;
-
-    let existingUser;
-    if (postSkip > 0) {
-      existingUser = await User.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-        {
-          $project: {
-            posts: { $slice: ["$posts", postSkip * 10, 10] },
-          },
-        },
-      ]);
-      existingUser = existingUser[0];
-    } else {
-      existingUser = await User.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-        { $addFields: { posts: { $slice: ["$posts", 0, 10] } } },
-      ]);
-      existingUser = existingUser[0];
+    if (!postSkip) {
+      return res.status(400).json({ error: "postSkip is required." });
     }
 
-    return res.status(200).json({ myPosts: existingUser.posts });
+    let list = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $project: {
+          posts: {
+            $slice: [{ $reverseArray: "$posts" }, postSkip * 20, 20],
+          },
+        },
+      },
+    ]);
+    list = list[0];
+    if (!list) {
+      return res.status(404).json({ message: "There is no posts" });
+    }
+
+    const listDetails = await Promise.all(
+      list.posts.map(async (element) => {
+        const postData = await Post.findOne({ _id: element });
+        return postData;
+      })
+    );
+    const user = await User.findOne(
+      { _id: userId },
+      { name: 1, email: 1, gender: 1, dateOfBirth: 1, image: 1, type: 1 }
+    );
+
+    const data = { listDetails, user };
+    return res.status(200).json({ myPosts: data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -76,36 +97,50 @@ const post = async (req, res) => {
   try {
     const { postId, commentSkip } = req.query;
     if (!postId) {
-      return res.status(200).json({ message: "Please enter post id" });
+      return res.status(400).json({ error: "postId is required." });
+    }
+    if (!commentSkip) {
+      return res.status(400).json({ error: "commentSkip is required." });
     }
 
-    let existingPost;
-    if (commentSkip > 0) {
-      existingPost = await Post.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
-        {
-          $project: {
-            comments: { $slice: ["$comments", commentSkip * 10, 10] },
+    // let existingPost;
+    // if (commentSkip > 0) {
+    //   existingPost = await Post.aggregate([
+    //     { $match: { _id: new mongoose.Types.ObjectId(postId) } },
+    //     {
+    //       $project: {
+    //         comments: { $slice: ["$comments", commentSkip * 10, 10] },
+    //       },
+    //     },
+    //   ]);
+    //   existingPost = existingPost[0];
+    // } else {
+    //   existingPost = await Post.aggregate([
+    //     { $match: { _id: new mongoose.Types.ObjectId(postId) } },
+    //     { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
+    //   ]);
+    //   existingPost = existingPost[0];
+    // }
+
+    let list = await Post.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(postId) } },
+      {
+        $project: {
+          comments: {
+            $slice: [{ $reverseArray: "$comments" }, commentSkip * 10, 10],
           },
         },
-      ]);
-      existingPost = existingPost[0];
-    } else {
-      existingPost = await Post.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
-        { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
-      ]);
-      existingPost = existingPost[0];
+      },
+    ]);
+    list = list[0];
+    if (!list) {
+      return res.status(404).json({ message: "Invalid post ID" });
     }
 
-    if (!existingPost) {
-      return res.status(200).json({ message: "Invalid post ID" });
-    }
-    let a = await Post.updateOne(
-      { _id: existingPost._id },
-      { $inc: { innerViewCount: 1 } }
-    );
-    return res.status(200).json({ post: existingPost });
+    const post = await Post.findOne({ _id: list._id });
+    await Post.updateOne({ _id: list._id }, { $inc: { innerViewCount: 1 } });
+    const data = { post, list };
+    return res.status(200).json({ post: data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

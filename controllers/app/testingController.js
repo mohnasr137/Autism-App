@@ -698,19 +698,21 @@ const showAllHistory = async (req, res) => {
     ]);
     list = list[0];
 
-    const listDetails = list.history.forEach(async (element) => {
-      const testData = await testSample.findOne(
-        { _id: element },
-        {
-          form: 0,
-          childFace: 0,
-          drawing: 0,
-          coloring: 0,
-          handWriting: 0,
-        }
-      );
-      return testData;
-    });
+    const listDetails = await Promise.all(
+      list.history.map(async (element) => {
+        const testData = await testSample.findOne(
+          { _id: element },
+          {
+            form: 0,
+            childFace: 0,
+            drawing: 0,
+            coloring: 0,
+            handWriting: 0,
+          }
+        );
+        return testData;
+      })
+    );
     return res.status(200).json({ message: listDetails });
   } catch (error) {
     return res.status(500).json({ message: error.message });

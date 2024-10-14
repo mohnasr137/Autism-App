@@ -66,7 +66,9 @@ const offlineWebsites = async (req, res) => {
       return res.status(200).json({ error: "Invalid number" });
     }
 
-    const fullData = await Website.aggregate([{ $sample: { size: Number(number) } }]);
+    const fullData = await Website.aggregate([
+      { $sample: { size: Number(number) } },
+    ]);
 
     return res.status(200).json({ fullData });
   } catch (error) {
@@ -98,10 +100,12 @@ const showFavorite = async (req, res) => {
     ]);
     list = list[0];
 
-    const listDetails = list.favoriteWebsites.forEach(async (element) => {
-      const testData = await testSample.findOne({ _id: element });
-      return testData;
-    });
+    const listDetails = await Promise.all(
+      list.favoriteWebsites.map(async (element) => {
+        const websiteData = await Website.findOne({ _id: element });
+        return websiteData;
+      })
+    );
     return res.status(200).json({ message: listDetails });
   } catch (error) {
     return res.status(500).json({ message: error.message });
