@@ -23,13 +23,13 @@ const userSchema = mongoose.Schema({
   },
   dateOfBirth: {
     type: Date,
-    required: true,
+    // required: true,
     default: Date.now,
   },
   gender: {
     type: String,
     enum: ["male", "female"],
-    required: true,
+    // required: true,
     default: "not determined",
   },
   address: {
