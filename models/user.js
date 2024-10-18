@@ -83,7 +83,13 @@ const userSchema = mongoose.Schema({
       trim: true,
     },
   ],
-  history: [
+  searchHistory: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  videoHistory: [
     {
       type: String,
       trim: true,

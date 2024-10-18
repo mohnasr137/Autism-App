@@ -5,6 +5,8 @@ import path from "path";
 
 // imports
 import {
+  search,
+  searchHistory,
   showAllPosts,
   showMyPosts,
   post,
@@ -45,6 +47,8 @@ const upload = multer({
 });
 
 // routers
+communityRouter.get("/search", search);
+communityRouter.get("/searchHistory", searchHistory);
 communityRouter.get("/showAllPosts", showAllPosts);
 communityRouter.get("/showMyPosts", showMyPosts);
 communityRouter.get("/post", post);

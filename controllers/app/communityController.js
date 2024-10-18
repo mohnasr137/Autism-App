@@ -18,16 +18,139 @@ const Categories = [
   "Science & Technology",
 ];
 
-// user posts
-
 // routers
+const search = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { skip, search, category, postType } = req.query;
+    const query = {};
+    const userSearch = {};
+    if (category) {
+      if (!Categories.includes(category)) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      query.category = category;
+    }
+    if (postType) {
+      if (!PostTypes.includes(postType)) {
+        return res.status(404).json({ error: "Post type not found" });
+      }
+      query.postType = postType;
+    }
+    if (search) {
+      query.$or = [{ text: { $regex: search, $options: "i" } }];
+      userSearch.$or = [{ name: { $regex: search, $options: "i" } }];
+    }
+
+    let postsList;
+    if (Object.keys(query).length === 0) {
+      postsList = await Post.aggregate([
+        { $sample: { size: 10 } },
+        { $addFields: { comments: { $slice: ["$comments", 2] } } },
+        { $addFields: { reactions: { $slice: ["$reactions", 2] } } },
+      ]);
+    } else {
+      postsList = await Post.aggregate([
+        { $match: query },
+        { $skip: skip * 10 },
+        { $limit: 10 },
+        { $addFields: { comments: { $slice: ["$comments", 2] } } },
+        { $addFields: { reactions: { $slice: ["$reactions", 2] } } },
+      ]);
+    }
+
+    let data = [];
+    for (let post of postsList) {
+      await Post.updateOne({ _id: post._id }, { $inc: { outerViewCount: 1 } });
+      const user = await User.findOne(
+        { _id: post.userId },
+        { name: 1, email: 1, gender: 1, dateOfBirth: 1, image: 1, type: 1 }
+      );
+      if (user) {
+        data.push({ post, user });
+      } else {
+        await Post.deleteOne({ _id: post._id });
+      }
+    }
+
+    let usersList;
+    if (Object.keys(userSearch).length === 0) {
+      usersList = await User.aggregate([
+        { $sample: { size: 10 } },
+        {
+          $project: {
+            name: 1,
+            email: 1,
+            gender: 1,
+            dateOfBirth: 1,
+            image: 1,
+            type: 1,
+          },
+        },
+      ]);
+    } else {
+      usersList = await User.aggregate([
+        { $match: userSearch },
+        { $skip: skip * 10 },
+        { $limit: 10 },
+        {
+          $project: {
+            name: 1,
+            email: 1,
+            gender: 1,
+            dateOfBirth: 1,
+            image: 1,
+            type: 1,
+          },
+        },
+      ]);
+      await User.updateOne(
+        { _id: userId },
+        { $push: { searchHistory: search } }
+      );
+    }
+    return res.status(200).json({ usersList, data });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const searchHistory = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { searchSkip } = req.query;
+    if (!searchSkip) {
+      return res.status(400).json({ error: "searchSkip is required." });
+    }
+
+    let list = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $project: {
+          searchHistory: {
+            $slice: ["$searchHistory", searchSkip * 20, 20],
+          },
+        },
+      },
+    ]);
+    list = list[0];
+    if (!list) {
+      return res.status(404).json({ message: "There is no search history" });
+    }
+
+    return res.status(200).json({ list });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const showAllPosts = async (req, res) => {
   try {
     const randomPosts = await Post.aggregate([
       { $sample: { size: 10 } },
       { $addFields: { comments: { $slice: ["$comments", 2] } } },
+      { $addFields: { reactions: { $slice: ["$reactions", 2] } } },
     ]);
-
     if (randomPosts.length == 0) {
       return res.status(404).json({ error: "Posts not found" });
     }
@@ -102,25 +225,6 @@ const post = async (req, res) => {
     if (!commentSkip) {
       return res.status(400).json({ error: "commentSkip is required." });
     }
-
-    // let existingPost;
-    // if (commentSkip > 0) {
-    //   existingPost = await Post.aggregate([
-    //     { $match: { _id: new mongoose.Types.ObjectId(postId) } },
-    //     {
-    //       $project: {
-    //         comments: { $slice: ["$comments", commentSkip * 10, 10] },
-    //       },
-    //     },
-    //   ]);
-    //   existingPost = existingPost[0];
-    // } else {
-    //   existingPost = await Post.aggregate([
-    //     { $match: { _id: new mongoose.Types.ObjectId(postId) } },
-    //     { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
-    //   ]);
-    //   existingPost = existingPost[0];
-    // }
 
     let list = await Post.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(postId) } },
@@ -690,6 +794,8 @@ const deleteReaction = async (req, res) => {
 };
 
 export {
+  search,
+  searchHistory,
   showAllPosts,
   showMyPosts,
   post,
