@@ -699,7 +699,7 @@ const showAllHistory = async (req, res) => {
     list = list[0];
 
     const listDetails = await Promise.all(
-      list.history.map(async (element) => {
+      list.videoHistory.map(async (element) => {
         const testData = await testSample.findOne(
           { _id: element },
           {
@@ -734,7 +734,9 @@ const deleteHistory = async (req, res) => {
 
     await User.updateOne({ _id: userId }, { $pull: { testHistory: testId } });
 
-    return res.status(200).json({ message: "delete history successfully" });
+    return res
+      .status(200)
+      .json({ message: "delete video history successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

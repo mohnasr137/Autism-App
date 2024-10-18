@@ -176,44 +176,20 @@ const showAllHistory = async (req, res) => {
     if (!historySkip) {
       return res.status(400).json({ error: "historySkip is required." });
     }
-    // if (historySkip == 0) {
-    //   return res.status(404).json({ error: "historySkip not valid" });
-    // }
-
-    // let existingUser;
-    // if (historySkip > 0) {
-    //   existingUser = await User.aggregate([
-    //     { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-    //     {
-    //       $project: {
-    //         history: { $slice: ["$history", historySkip * 10, 10] },
-    //       },
-    //     },
-    //   ]);
-    //   existingUser = existingUser[0];
-    //   console.log(existingUser);
-    // } else {
-    //   existingUser = await User.aggregate([
-    //     { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-    //     { $addFields: { history: { $slice: ["$history", 0, 10] } } },
-    //   ]);
-    //   existingUser = existingUser[0];
-    //   console.log(existingUser);
-    // }
 
     let existingUser = await User.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       {
         $project: {
-          history: {
-            $slice: [{ $reverseArray: "$history" }, historySkip * 10, 10],
+          videoHistory: {
+            $slice: [{ $reverseArray: "$videoHistory" }, historySkip * 10, 10],
           },
         },
       },
     ]);
     existingUser = existingUser[0];
 
-    const videosList = existingUser.history;
+    const videosList = existingUser.videoHistory;
     let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
@@ -254,8 +230,10 @@ const showAllHistory = async (req, res) => {
 const deleteAllHistory = async (req, res) => {
   try {
     const userId = req.userId;
-    await User.updateOne({ _id: userId }, { $set: { history: [] } });
-    return res.status(200).json({ message: "history deleted successfuly" });
+    await User.updateOne({ _id: userId }, { $set: { videoHistory: [] } });
+    return res
+      .status(200)
+      .json({ message: "video history deleted successfuly" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -389,10 +367,10 @@ const video = async (req, res) => {
     let list = [];
     const existingUser = await User.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-      { $addFields: { history: { $slice: ["$history", 0, 10] } } },
+      { $addFields: { videoHistory: { $slice: ["$videoHistory", 0, 10] } } },
     ]);
 
-    list = existingUser[0].history;
+    list = existingUser[0].videoHistory;
     let p = true;
     for (let i = 0; i < list.length; i++) {
       if (list[i] == videoId) {
@@ -401,10 +379,13 @@ const video = async (req, res) => {
       }
     }
     if (p) {
-      await User.updateOne({ _id: userId }, { $push: { history: videoId } });
+      await User.updateOne(
+        { _id: userId },
+        { $push: { videoHistory: videoId } }
+      );
       return res
         .status(200)
-        .json({ fullData, message: "add to history successfuly" });
+        .json({ fullData, message: "add to video history successfuly" });
     }
 
     return res.status(200).json({ fullData });
