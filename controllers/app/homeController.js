@@ -402,7 +402,7 @@ const showVideoComments = async (req, res) => {
     }
 
     let existingVideo = await Video.aggregate([
-      { $match: { videoId } },
+      { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
       {
         $project: {
           comments: { $slice: ["$comments", commentsSkip * 10, 10] },
@@ -753,7 +753,7 @@ const showVideoReactions = async (req, res) => {
     let existingVideo;
     if (reactionsSkip > 0) {
       existingVideo = await Video.aggregate([
-        { $match: { videoId } },
+        { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
         {
           $project: {
             reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
@@ -763,7 +763,7 @@ const showVideoReactions = async (req, res) => {
       existingVideo = existingVideo[0];
     } else {
       existingVideo = await Video.aggregate([
-        { $match: { videoId } },
+        { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
         { $addFields: { reactions: { $slice: ["$reactions", 0, 10] } } },
       ]);
       existingVideo = existingVideo[0];

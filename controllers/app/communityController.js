@@ -444,7 +444,7 @@ const showPostComments = async (req, res) => {
     }
 
     let existingPost = await Post.aggregate([
-      { $match: { postId } },
+      { $match: { _id: new mongoose.Types.ObjectId(postId) } },
       {
         $project: {
           comments: { $slice: ["$comments", commentsSkip * 10, 10] },
@@ -692,7 +692,7 @@ const showPostReactions = async (req, res) => {
     let existingPost;
     if (reactionsSkip > 0) {
       existingPost = await Post.aggregate([
-        { $match: { postId } },
+        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
         {
           $project: {
             reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
@@ -702,7 +702,7 @@ const showPostReactions = async (req, res) => {
       existingPost = existingPost[0];
     } else {
       existingPost = await Post.aggregate([
-        { $match: { postId } },
+        { $match: { _id: new mongoose.Types.ObjectId(postId) } },
         { $addFields: { reactions: { $slice: ["$reactions", 0, 10] } } },
       ]);
       existingPost = existingPost[0];
