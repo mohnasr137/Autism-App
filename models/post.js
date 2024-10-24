@@ -60,7 +60,7 @@ const postSchema = mongoose.Schema(
       min: 0,
       default: 0,
     },
-    commentsNumber: {
+    commentsCount: {
       type: Number,
       min: 0,
       default: 0,
