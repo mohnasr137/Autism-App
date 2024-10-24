@@ -1,5 +1,6 @@
 // packages
 import mongoose from "mongoose";
+import axios from "axios";
 
 // imports
 import User from "../../models/user.js";
@@ -489,8 +490,10 @@ const addComment = async (req, res) => {
     if (!comment || comment.length == 0) {
       return res.status(400).json({ error: "Comment is required." });
     }
-
-    const existingPost = await Post.findOne({ postId }, { commentsCount: 1 });
+    const existingPost = await Post.findOne(
+      { _id: postId },
+      { commentsCount: 1 }
+    );
     if (!existingPost) {
       return res.status(404).json({ error: "Post not found" });
     }
@@ -518,7 +521,7 @@ const addComment = async (req, res) => {
       newComment = await newComment.save();
 
       await Post.updateOne(
-        { postId },
+        { _id: postId },
         {
           $push: { comments: newComment._id },
           $inc: { commentsCount: 1 },
@@ -572,7 +575,7 @@ const addComment = async (req, res) => {
         );
       }
       await Post.updateOne(
-        { postId },
+        { _id: postId },
         {
           $inc: { commentsCount: 1 },
         }
@@ -598,7 +601,7 @@ const editComment = async (req, res) => {
       return res.status(400).json({ error: "New Comment is required." });
     }
 
-    const existingPost = await Post.findOne({ postId }, { _id: 1 });
+    const existingPost = await Post.findOne({ _id: postId }, { _id: 1 });
     if (!existingPost) {
       return res.status(404).json({ error: "Post not found" });
     }
@@ -638,7 +641,10 @@ const deleteComment = async (req, res) => {
       return res.status(400).json({ error: "Comment ID is required." });
     }
 
-    const existingPost = await Video.findOne({ postId }, { commentsCount: 1 });
+    const existingPost = await Post.findOne(
+      { _id: postId },
+      { commentsCount: 1 }
+    );
     if (!existingPost) {
       return res.status(404).json({ error: "Post not found" });
     }
@@ -653,7 +659,7 @@ const deleteComment = async (req, res) => {
     if (!comment.subcomment) {
       await postComment.deleteOne({ _id: commentId });
       await Post.updateOne(
-        { postId },
+        { _id: postId },
         {
           $pull: { comments: commentId },
           $inc: { commentsCount: -1 },
@@ -669,7 +675,7 @@ const deleteComment = async (req, res) => {
         }
       );
       await Post.updateOne(
-        { postId },
+        { _id: postId },
         {
           $inc: { commentsCount: -1 },
         }
@@ -737,7 +743,10 @@ const addReaction = async (req, res) => {
       return res.status(400).json({ error: "Reaction is required." });
     }
 
-    const existingPost = await Post.findOne({ postId }, { reactionsCount: 1 });
+    const existingPost = await Post.findOne(
+      { _id: postId },
+      { reactionsCount: 1 }
+    );
     if (!existingPost) {
       return res.status(400).json({ error: "Post not found" });
     }
@@ -750,7 +759,7 @@ const addReaction = async (req, res) => {
     newReaction = await newReaction.save();
 
     await Post.updateOne(
-      { postId },
+      { _id: postId },
       {
         $push: { reactions: newReaction._id },
         $inc: { reactionsCount: 1 },
@@ -772,7 +781,10 @@ const deleteReaction = async (req, res) => {
       return res.status(400).json({ error: "Reaction ID is required." });
     }
 
-    const existingPost = await Post.findOne({ postId }, { reactionsCount: 1 });
+    const existingPost = await Post.findOne(
+      { _id: postId },
+      { reactionsCount: 1 }
+    );
     if (!existingPost) {
       return res.status(404).json({ error: "Post not found" });
     }
@@ -780,7 +792,7 @@ const deleteReaction = async (req, res) => {
     await postReaction.deleteOne({ _id: reactionId });
 
     await Post.updateOne(
-      { postId },
+      { _id: postId },
       {
         $pull: { reactions: reactionId },
         $inc: { reactionsCount: -1 },
