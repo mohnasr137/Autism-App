@@ -22,13 +22,11 @@ const videoCommentSchema = mongoose.Schema(
       default: false,
     },
     parentCommentId: {
-      required: true,
       type: String,
       trim: true,
     },
     subcomments: [
       {
-        required: true,
         type: String,
         trim: true,
       },

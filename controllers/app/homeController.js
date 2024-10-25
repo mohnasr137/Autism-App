@@ -71,7 +71,7 @@ const showAllVideos = async (req, res) => {
     const videos = await youtube.search.list(params);
     const fullData = await Promise.all(
       videos.data.items.map(async (item) => {
-        const channel = await youtube.channels.list({
+        const channel = youtube.channels.list({
           part: "snippet",
           id: item.snippet.channelId,
         });
@@ -143,7 +143,7 @@ const showAllChannels = async (req, res) => {
     const channels = await youtube.search.list(params);
     const fullData = await Promise.all(
       channels.data.items.map(async (item) => {
-        const channel = await youtube.channels.list({
+        const channel = youtube.channels.list({
           part: "snippet,contentDetails,statistics",
           id: item.id.channelId,
         });
@@ -190,7 +190,7 @@ const showAllHistory = async (req, res) => {
     existingUser = existingUser[0];
 
     const videosList = existingUser.videoHistory;
-    let videos = await youtube.videos.list({
+    let videos = youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
     });
@@ -198,7 +198,7 @@ const showAllHistory = async (req, res) => {
     const channelsList = videos.data.items.map((item) => {
       return item.snippet.channelId;
     });
-    let channels = await youtube.channels.list({
+    let channels = youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelsList.join(","),
     });
@@ -246,13 +246,13 @@ const channel = async (req, res) => {
       return res.status(400).json({ error: "Channel ID is required." });
     }
 
-    const channel = await youtube.channels.list({
+    const channel = youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelId,
     });
     const uploadsPlaylistId =
       channel.data.items[0].contentDetails.relatedPlaylists.uploads;
-    let videoIds = await youtube.playlistItems.list({
+    let videoIds = youtube.playlistItems.list({
       part: "snippet,contentDetails",
       playlistId: uploadsPlaylistId,
       maxResults: 10,
@@ -261,7 +261,7 @@ const channel = async (req, res) => {
     const videoIdsArray = videoIds.data.items.map(
       (item) => item.contentDetails.videoId
     );
-    let videos = await youtube.videos.list({
+    let videos = youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videoIdsArray.join(","),
     });
@@ -308,11 +308,11 @@ const video = async (req, res) => {
       return res.status(400).json({ error: "Video ID is required." });
     }
 
-    const video = await youtube.videos.list({
+    const video = youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videoId,
     });
-    const channel = await youtube.channels.list({
+    const channel = youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: video.data.items[0].snippet.channelId,
     });
@@ -890,7 +890,7 @@ const showFavorite = async (req, res) => {
     list = list[0];
 
     const videosList = list.favoriteVideos;
-    let videos = await youtube.videos.list({
+    let videos = youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
     });
@@ -898,7 +898,7 @@ const showFavorite = async (req, res) => {
     const channelsList = videos.data.items.map((item) => {
       return item.snippet.channelId;
     });
-    let channels = await youtube.channels.list({
+    let channels = youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelsList.join(","),
     });

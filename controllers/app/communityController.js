@@ -219,12 +219,12 @@ const showMyPosts = async (req, res) => {
 
 const post = async (req, res) => {
   try {
-    const { postId, commentSkip } = req.query;
+    const { postId, skip } = req.query;
     if (!postId) {
       return res.status(400).json({ error: "postId is required." });
     }
-    if (!commentSkip) {
-      return res.status(400).json({ error: "commentSkip is required." });
+    if (!skip) {
+      return res.status(400).json({ error: "skip is required." });
     }
 
     let list = await Post.aggregate([
@@ -232,7 +232,10 @@ const post = async (req, res) => {
       {
         $project: {
           comments: {
-            $slice: [{ $reverseArray: "$comments" }, commentSkip * 10, 10],
+            $slice: [{ $reverseArray: "$comments" }, skip * 10, 10],
+          },
+          reactions: {
+            $slice: [{ $reverseArray: "$reactions" }, skip * 10, 10],
           },
         },
       },
@@ -361,13 +364,13 @@ const editPost = async (req, res) => {
     let query = {};
     if (method == "Post") {
       const { text, category, postType } = req.body;
-      if (!Categories.includes(category)) {
+      if (category && !Categories.includes(category)) {
         return res.status(404).json({ error: "Category not found" });
       }
       if (category) {
         query.category = category;
       }
-      if (!PostTypes.includes(postType)) {
+      if (postType && !PostTypes.includes(postType)) {
         return res.status(404).json({ error: "Post type not found" });
       }
       if (postType) {
@@ -398,9 +401,7 @@ const editPost = async (req, res) => {
       }
       await Post.updateOne({ _id: postId }, { $set: query });
     }
-    return res
-      .status(200)
-      .json({ newPost, message: "Post updated successfuly.." });
+    return res.status(200).json({ message: "Post updated successfuly.." });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -439,16 +440,24 @@ const deletePost = async (req, res) => {
 
 const showPostComments = async (req, res) => {
   try {
-    const { commentsSkip, postId } = req.query;
+    const { postId, commentsSkip, subcommentsSkip } = req.query;
     if (!postId) {
       return res.status(400).json({ error: "Post ID is required." });
+    }
+    if (!commentsSkip) {
+      return res.status(400).json({ error: "commentsSkip is required." });
+    }
+    if (!subcommentsSkip) {
+      return res.status(400).json({ error: "subcommentsSkip is required." });
     }
 
     let existingPost = await Post.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(postId) } },
       {
         $project: {
-          comments: { $slice: ["$comments", commentsSkip * 10, 10] },
+          comments: {
+            $slice: [{ $reverseArray: "$comments" }, commentsSkip * 10, 10],
+          },
         },
       },
     ]);
@@ -458,19 +467,42 @@ const showPostComments = async (req, res) => {
       return res.status(400).json({ error: "Post not found" });
     }
 
-    let fullData = [];
-    for (let commentId in existingPost.comments) {
-      let comment = await Post.aggregate([
+    let comments = [];
+    for (let commentId of existingPost.comments) {
+      let comment = await postComment.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(commentId) } },
-        { $addFields: { subcomments: { $slice: ["$subcomments", 0, 2] } } },
+        {
+          $addFields: {
+            subcomments: {
+              $slice: [
+                { $reverseArray: "$subcomments" },
+                subcommentsSkip * 10,
+                10,
+              ],
+            },
+          },
+        },
       ]);
       comment = comment[0];
+      console.log(comment);
+      let subcomments = [];
+      for (let subcommentId of comment.subcomments) {
+        let subcomment = await postComment.aggregate([
+          { $match: { _id: new mongoose.Types.ObjectId(subcommentId) } },
+        ]);
+        subcomment = subcomment[0];
+        console.log(subcomment);
+        if (subcomment) {
+          subcomments.push(subcomment);
+        }
+      }
       if (comment) {
-        fullData.push(comment);
+        comment.subcomments = subcomments;
+        comments.push(comment);
       }
     }
 
-    return res.status(200).json({ fullData });
+    return res.status(200).json({ comments });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
