@@ -44,7 +44,7 @@ const search = async (req, res) => {
     }
 
     let postsList;
-    if (Object.keys(query).length === 0) {
+    if (Object.keys(query).length == 0) {
       postsList = await Post.aggregate([
         { $sample: { size: 10 } },
         { $addFields: { comments: { $slice: ["$comments", 2] } } },
@@ -75,7 +75,7 @@ const search = async (req, res) => {
     }
 
     let usersList;
-    if (Object.keys(userSearch).length === 0) {
+    if (Object.keys(userSearch).length == 0) {
       usersList = await User.aggregate([
         { $sample: { size: 10 } },
         {
