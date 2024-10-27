@@ -15,7 +15,7 @@ const sendVerifyEmail = async (email, link) => {
         pass: process.env.PASSWORD,
       },
     });
-    let info = await transporter.sendMail({
+    await transporter.sendMail({
       from: process.env.USER,
       to: email,
       subject: "Verify Your Email Address",
@@ -55,15 +55,15 @@ const activeEmail = async (req, res) => {
 
     const code = isVerify.code;
     const id = isVerify.id;
-    if (existingUser.verify === false) {
-      if (existingUser.code === code) {
+    if (existingUser.verify == false) {
+      if (existingUser.code == code) {
         await User.updateOne({ _id: id }, { $set: { verify: true } });
         return res.status(200).json({ message: "Email verified successfully" });
       } else {
         return res.status(400).json({ error: "Wrong verification code" });
       }
     } else {
-      return res.status(400).json({ error: "This email is already verified" });
+      return res.status(409).json({ error: "This email is already verified" });
     }
   } catch (error) {
     return res.status(500).json({ error: error.message });

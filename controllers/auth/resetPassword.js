@@ -1,4 +1,4 @@
-// // packages
+// packages
 import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
 
@@ -9,14 +9,16 @@ import User from "../../models/user.js";
 const sendPassEmail = async (req, res) => {
   try {
     const { email } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (!existingUser) {
-      return res.status(400).json({ error: "User not found" });
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
     }
-    if (existingUser.verify === false) {
-      return res
-        .status(400)
-        .json({ error: "User with this email is not verified" });
+
+    const existingUser = await User.findOne({ email }, { verify: 1 });
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (existingUser.verify == false) {
+      return res.status(403).json({ error: "User email not verified" });
     }
     const code = `${Math.floor(100000 + Math.random() * 900000)}`;
     await User.updateOne({ email }, { $set: { code } });
@@ -56,19 +58,23 @@ const sendPassEmail = async (req, res) => {
 const activeResetPass = async (req, res) => {
   try {
     const { email, code } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: "Email is required." });
-    }
-    if (!code) {
-      return res.status(400).json({ error: "Reset code is required." });
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email and code are required." });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser.code === code) {
+    const existingUser = await User.findOne({ email }, { verify: 1, code: 1 });
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (existingUser.verify == false) {
+      return res.status(403).json({ error: "User email not verified" });
+    }
+
+    if (existingUser.code == code) {
       await User.updateOne({ email }, { $set: { resetPass: true } });
       return res
         .status(200)
-        .json({ message: "You can now reset your password" });
+        .json({ message: "Now, you can reset your password" });
     } else {
       return res.status(400).json({ error: "Invalid reset code" });
     }
@@ -80,32 +86,36 @@ const activeResetPass = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { email, password, confirmPassword } = req.body;
-    const passwordMatch =
-      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-    if (!email) {
-      return res.status(400).json({ error: "Email is required." });
-    }
-    if (!password) {
-      return res.status(400).json({ error: "Password is required." });
-    }
-    if (!confirmPassword) {
-      return res.status(400).json({ error: "Confirm password is required." });
+    if (!email || !password || !confirmPassword) {
+      return res.status(400).json({
+        error: "Email, password and confirm password are required.",
+      });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser.resetPass === false) {
-      return res
-        .status(400)
-        .json({ error: "Password reset is not activated for this email" });
+    const passwordMatch =
+      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+    const existingUser = await User.findOne(
+      { email },
+      { resetPass: 1, verify: 1 }
+    );
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (existingUser.verify == false) {
+      return res.status(403).json({ error: "User email not verified" });
+    }
+    if (existingUser.resetPass == false) {
+      return res.status(403).json({ error: "resetPassword not activated" });
     }
     if (!passwordMatch.test(password)) {
       return res.status(400).json({ error: "Please enter a valid password" });
     }
-    if (confirmPassword !== password) {
+    if (confirmPassword != password) {
       return res.status(400).json({
         error: "Password and confirm password do not match",
       });
     }
+
     const hashedPassword = await bcryptjs.hash(password, 8);
     await User.updateOne(
       { email },
@@ -117,4 +127,5 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// exports
 export { sendPassEmail, activeResetPass, resetPassword };

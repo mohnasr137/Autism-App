@@ -17,14 +17,13 @@ const arr = [
 // routers
 const authJwt = async (req, res, next) => {
   try {
-    const { url: reqUrl, method: reqMethod, query } = req;
-
+    const { url: reqUrl, method: reqMethod } = req;
     for (const element of arr) {
-      if (element.method !== reqMethod) continue;
+      if (element.method != reqMethod) continue;
 
-      if (typeof element.url === "string") {
+      if (typeof element.url == "string") {
         const baseUrl = reqUrl.split("?")[0];
-        if (baseUrl === element.url) {
+        if (baseUrl == element.url) {
           return next();
         }
       } else if (element.url instanceof RegExp && element.url.test(reqUrl)) {
@@ -46,7 +45,7 @@ const authJwt = async (req, res, next) => {
     if (!existingUser) {
       return res.status(404).json({ error: "User not found" });
     }
-    if (existingUser.verify === false) {
+    if (existingUser.verify == false) {
       return res.status(400).json({ error: "User email not verified" });
     }
 

@@ -23,13 +23,11 @@ const userSchema = mongoose.Schema({
   },
   dateOfBirth: {
     type: Date,
-    // required: true,
     default: Date.now,
   },
   gender: {
     type: String,
-    enum: ["male", "female"],
-    // required: true,
+    enum: ["male", "female", "not determined"],
     default: "not determined",
   },
   address: {
@@ -70,7 +68,7 @@ const userSchema = mongoose.Schema({
   },
   activeTest: {
     type: String,
-    default: "",
+    default: "no activeTest",
   },
   postsCount: {
     type: Number,

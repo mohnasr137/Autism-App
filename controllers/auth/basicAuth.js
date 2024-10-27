@@ -1,4 +1,4 @@
-// // packages
+// packages
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import path from "path";
@@ -9,12 +9,19 @@ import { sendVerifyEmail } from "./verifyEmail.js";
 
 // init
 const url = process.env.API_URL;
-const app_url = process.env.APP_URL;
 
 // routers
 const signUp = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
+    if (!name || !email || !password || !confirmPassword) {
+      return res
+        .status(400)
+        .json({
+          error: "Name, email, password and confirm password are required.",
+        });
+    }
+
     const image =
       req.protocol +
       "://" +
@@ -26,13 +33,13 @@ const signUp = async (req, res) => {
         .json({ error: "Password and confirm password do not match" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser && existingUser.verify === true) {
+    const existingUser = await User.findOne({ email }, { verify: 1 });
+    if (existingUser && existingUser.verify == true) {
       return res
-        .status(400)
+        .status(409)
         .json({ error: "A user with this email already exists" });
     }
-    if (existingUser && existingUser.verify === false) {
+    if (existingUser && existingUser.verify == false) {
       const code = `${Math.floor(100000 + Math.random() * 900000)}`;
       await User.updateOne({ email }, { $set: { code } });
       const token = jwt.sign(
@@ -43,11 +50,11 @@ const signUp = async (req, res) => {
         }
       );
       const link =
-        req.protocol + "://" + req.get("host") + `/api/v1/auth/token/${token}`;
+        req.protocol + "://" + req.get("host") + `${url}/auth/token/${token}`;
       sendVerifyEmail(email, link);
-      return res.status(200).send({
+      return res.status(202).send({
         message:
-          "Account exists but is not verified. Verification email resent.",
+          "Account exists but is not verified. Verification email resend successfully",
       });
     }
 
@@ -66,11 +73,11 @@ const signUp = async (req, res) => {
       expiresIn: "30d",
     });
     const link =
-      req.protocol + "://" + req.get("host") + `/api/v1/auth/token/${token}`;
+      req.protocol + "://" + req.get("host") + `${url}/auth/token/${token}`;
     sendVerifyEmail(email, link);
 
     return res.status(200).json({
-      message: "User created and verification email sent successfully",
+      message: "User created and verification email send successfully",
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -80,31 +87,40 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const existingUser = await User.findOne({ email });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ error: "Email and password are required." });
+    }
+
+    const existingUser = await User.findOne(
+      { email },
+      { password: 1, verify: 1 }
+    );
     if (!existingUser) {
-      return res.status(404).json({ error: "Email or password is incorrect" });
+      return res.status(401).json({ error: "Email or password is incorrect" });
     }
     const isMatch = await bcryptjs.compare(password, existingUser.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Email or password is incorrect" });
+      return res.status(401).json({ error: "Email or password is incorrect" });
     }
-    if (existingUser.verify === false) {
-      return res.status(400).json({ error: "User email not verified" });
+    if (existingUser.verify == false) {
+      return res.status(403).json({ error: "User email not verified" });
     }
 
     const token = jwt.sign({ id: existingUser._id }, process.env.SECRET, {
       expiresIn: "30d",
     });
-    const userData = {
-      name: existingUser.name,
-      email: existingUser.email,
-      image: existingUser.image,
-      type: existingUser.type,
-    };
+    // const userData = {
+    //   name: existingUser.name,
+    //   email: existingUser.email,
+    //   image: existingUser.image,
+    //   type: existingUser.type,
+    // };
 
     return res.status(200).json({
       message: "login successfully",
-      userData,
+      // userData,
       token,
     });
   } catch (error) {
@@ -112,4 +128,5 @@ const signIn = async (req, res) => {
   }
 };
 
+// exports
 export { signUp, signIn };
