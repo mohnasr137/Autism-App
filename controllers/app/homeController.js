@@ -71,7 +71,7 @@ const showAllVideos = async (req, res) => {
     const videos = await youtube.search.list(params);
     const fullData = await Promise.all(
       videos.data.items.map(async (item) => {
-        const channel = youtube.channels.list({
+        const channel = await youtube.channels.list({
           part: "snippet",
           id: item.snippet.channelId,
         });
@@ -143,7 +143,7 @@ const showAllChannels = async (req, res) => {
     const channels = await youtube.search.list(params);
     const fullData = await Promise.all(
       channels.data.items.map(async (item) => {
-        const channel = youtube.channels.list({
+        const channel = await youtube.channels.list({
           part: "snippet,contentDetails,statistics",
           id: item.id.channelId,
         });
@@ -190,7 +190,7 @@ const showAllHistory = async (req, res) => {
     existingUser = existingUser[0];
 
     const videosList = existingUser.videoHistory;
-    let videos = youtube.videos.list({
+    let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
     });
@@ -198,7 +198,7 @@ const showAllHistory = async (req, res) => {
     const channelsList = videos.data.items.map((item) => {
       return item.snippet.channelId;
     });
-    let channels = youtube.channels.list({
+    let channels = await youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelsList.join(","),
     });
@@ -246,13 +246,13 @@ const channel = async (req, res) => {
       return res.status(400).json({ error: "Channel ID is required." });
     }
 
-    const channel = youtube.channels.list({
+    const channel = await youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelId,
     });
     const uploadsPlaylistId =
       channel.data.items[0].contentDetails.relatedPlaylists.uploads;
-    let videoIds = youtube.playlistItems.list({
+    let videoIds = await youtube.playlistItems.list({
       part: "snippet,contentDetails",
       playlistId: uploadsPlaylistId,
       maxResults: 10,
@@ -308,11 +308,11 @@ const video = async (req, res) => {
       return res.status(400).json({ error: "Video ID is required." });
     }
 
-    const video = youtube.videos.list({
+    const video = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videoId,
     });
-    const channel = youtube.channels.list({
+    const channel = await youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: video.data.items[0].snippet.channelId,
     });
@@ -433,49 +433,6 @@ const showVideoComments = async (req, res) => {
   }
 };
 
-// const showVideoComments = async (req, res) => {
-//   try {
-//     const { commentsSkip, videoId } = req.query;
-//     if (!videoId) {
-//       return res.status(400).json({ error: "Video ID is required." });
-//     }
-
-//     let existingVideo;
-//     if (commentsSkip > 0) {
-//       existingVideo = await Video.aggregate([
-//         { $match: { videoId } },
-//         {
-//           $project: {
-//             comments: { $slice: ["$comments", commentsSkip * 10, 10] },
-//           },
-//         },
-//       ]);
-//       existingVideo = existingVideo[0];
-//     } else {
-//       existingVideo = await Video.aggregate([
-//         { $match: { videoId } },
-//         { $addFields: { comments: { $slice: ["$comments", 0, 10] } } },
-//       ]);
-//       existingVideo = existingVideo[0];
-//     }
-//     if (!existingVideo || existingVideo.length == 0) {
-//       return res.status(400).json({ error: "Video not found" });
-//     }
-
-//     let fullData = [];
-//     for (let i = 0; i < existingVideo.comments.length; i++) {
-//       let comment = await videoComment.findById(existingVideo.comments[i]);
-//       if (comment) {
-//         fullData.push(comment);
-//       }
-//     }
-
-//     return res.status(200).json({ fullData });
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
-
 const addComment = async (req, res) => {
   try {
     const userId = req.userId;
@@ -587,60 +544,6 @@ const addComment = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
-// const addComment = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const { videoId } = req.query;
-//     const { comment } = req.body;
-//     if (!videoId) {
-//       return res.status(400).json({ error: "Video ID is required." });
-//     }
-//     if (!comment || comment.length == 0) {
-//       return res.status(400).json({ error: "Comment is required." });
-//     }
-
-//     const existingVideo = await Video.findOne(
-//       { videoId },
-//       { commentsCount: 1 }
-//     );
-//     if (!existingVideo) {
-//       return res.status(404).json({ error: "Video not found" });
-//     }
-
-//     const data = { value: comment };
-//     const url = "https://moderationapi.com/api/v1/moderate/text";
-//     const analysis = await axios.post(url, data, {
-//       headers: {
-//         Authorization: `Bearer ${process.env.MODERATION_KEY}`,
-//         "Content-Type": "application/json",
-//       },
-//     });
-//     if (analysis.data.flagged) {
-//       return res
-//         .status(400)
-//         .json({ error: "Comment contains restricted content." });
-//     }
-
-//     let newComment = new videoComment({
-//       userId,
-//       videoId,
-//       comment,
-//     });
-//     newComment = await newComment.save();
-
-//     await Video.updateOne(
-//       { videoId },
-//       {
-//         $push: { comments: newComment._id },
-//         $inc: { commentsCount: 1 },
-//       }
-//     );
-//     return res.status(200).json({ message: "add comment successfully" });
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
 
 const editComment = async (req, res) => {
   try {
@@ -890,7 +793,7 @@ const showFavorite = async (req, res) => {
     list = list[0];
 
     const videosList = list.favoriteVideos;
-    let videos = youtube.videos.list({
+    let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videosList.join(","),
     });
@@ -898,7 +801,7 @@ const showFavorite = async (req, res) => {
     const channelsList = videos.data.items.map((item) => {
       return item.snippet.channelId;
     });
-    let channels = youtube.channels.list({
+    let channels = await youtube.channels.list({
       part: "snippet,contentDetails,statistics",
       id: channelsList.join(","),
     });
