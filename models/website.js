@@ -1,16 +1,6 @@
 import mongoose from "mongoose";
 
 const websiteSchema = mongoose.Schema({
-  // position: {
-  //   required: true,
-  //   type: Number,
-  //   trim: true,
-  // },
-  pageNum: {
-    required: true,
-    type: Number,
-    trim: true,
-  },
   title: {
     required: true,
     type: String,

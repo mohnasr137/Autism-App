@@ -36,10 +36,7 @@ const onlineWebsites = async (req, res) => {
     }));
 
     for (let website of fullData) {
-      console.log(website);
       website = new Website({
-        // position: website.position,
-        pageNum: page,
         title: website.title,
         snippet: website.snippet,
         link: website.link,
@@ -55,6 +52,7 @@ const onlineWebsites = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 const offlineWebsites = async (req, res) => {
   try {
@@ -73,6 +71,28 @@ const offlineWebsites = async (req, res) => {
     return res.status(200).json({ fullData });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+};
+
+const addWebsites = async (req, res) => {
+  try {
+    const {fullData} = req.body;
+
+    for (let website of fullData) {
+      website = new Website({
+        title: website.title,
+        snippet: website.snippet,
+        link: website.link,
+        thumbnail: website.thumbnail,
+        favicon: website.favicon,
+        source: website.source,
+      });
+      await website.save();
+    }
+
+    return res.status(200).json({ fullData });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -163,6 +183,7 @@ const deleteFavorite = async (req, res) => {
 export {
   onlineWebsites,
   offlineWebsites,
+  addWebsites,
   showFavorite,
   addFavorite,
   deleteFavorite,
