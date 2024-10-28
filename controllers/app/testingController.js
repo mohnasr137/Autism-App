@@ -9,10 +9,8 @@ import testSample from "../../models/testSample.js";
 import User from "../../models/user.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GENERATIVE_AI_API_KEY);
-const GenerativeAI = async (buffer, type) => {
+const GenerativeAI = async (buffer, type, prompt) => {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const prompt =
-    "Does this image contain a child's face? Please respond with '1' for yes and '0' for no.";
   const imagePart = {
     inlineData: {
       data: buffer.toString("base64"),
@@ -205,7 +203,6 @@ const postForm = async (req, res) => {
         error: "All questions are required.",
       });
     }
-
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -214,17 +211,45 @@ const postForm = async (req, res) => {
     let response;
     for (let i = 0; i < 3; i++) {
       try {
-        const form = new FormData();
-        form.append("image", file.buffer, {
-          filename: file.originalname,
-          contentType: file.mimetype,
-        });
+        const data = {
+          data: [
+            q1,
+            q2,
+            q3,
+            q4,
+            q5,
+            q6,
+            q7,
+            q8,
+            q9,
+            q10,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+          ],
+        };
         response = await axios.post(
-          "https://flask-childface-api-main.onrender.com/childFace",
-          form,
+          "https://flask-ml-28g3.onrender.com/predict",
+          data,
           {
             headers: {
-              ...form.getHeaders(),
+              "Content-Type": "application/json",
             },
           }
         );
@@ -239,12 +264,12 @@ const postForm = async (req, res) => {
 
     await testSample.updateOne(
       { _id: userTest.activeTest },
-      { $set: { childFace: response.data.prediction } }
+      { $set: { form: response.data.prediction } }
     );
 
     return res.json({
       message: "Form Test successfully",
-      data: sum,
+      data: response.data.prediction,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -257,7 +282,7 @@ const postForm = async (req, res) => {
 //     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 } = req.body;
 //     let questions = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10];
 //     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-//     if (userTest.activeTest == "") {
+//     if (userTest.activeTest == "no activeTest") {
 //       return res.status(404).json({ error: "Active test not found" });
 //     }
 
@@ -301,7 +326,9 @@ const childFace = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const genText = await GenerativeAI(file.buffer, file.mimetype);
+    const prompt =
+      "Does this image contain a child's face? Please respond with '1' for yes and '0' for no.";
+    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
     if (!genText) {
       return res
         .status(400)
@@ -359,11 +386,13 @@ const drawing = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const genText = await GenerativeAI(file.buffer, file.mimetype);
+    const prompt =
+      "Does this image contain a child's drawing? Please respond with '1' for yes and '0' for no.";
+    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
     if (!genText) {
       return res
         .status(400)
-        .json({ error: "The image does not contain a child's face." });
+        .json({ error: "The image does not contain a child's drawing." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
@@ -417,11 +446,13 @@ const coloring = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const genText = await GenerativeAI(file.buffer, file.mimetype);
+    const prompt =
+      "Does this image contain a child's coloring? Please respond with '1' for yes and '0' for no.";
+    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
     if (!genText) {
       return res
         .status(400)
-        .json({ error: "The image does not contain a child's face." });
+        .json({ error: "The image does not contain a child's coloring." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
@@ -475,11 +506,13 @@ const handWriting = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const genText = await GenerativeAI(file.buffer, file.mimetype);
+    const prompt =
+      "Does this image contain a child's handwriting? Please respond with '1' for yes and '0' for no.";
+    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
     if (!genText) {
       return res
         .status(400)
-        .json({ error: "The image does not contain a child's face." });
+        .json({ error: "The image does not contain a child's handwriting." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
@@ -562,7 +595,10 @@ const testResult = async (req, res) => {
       { _id: userId },
       { $push: { testHistory: userTest.activeTest } }
     );
-    await User.updateOne({ _id: userId }, { $set: { activeTest: "" } });
+    await User.updateOne(
+      { _id: userId },
+      { $set: { activeTest: "no activeTest" } }
+    );
 
     return res.json({
       message: "Testing successfully",
