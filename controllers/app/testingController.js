@@ -20,7 +20,7 @@ const GenerativeAI = async (buffer, type) => {
     },
   };
   const result = await model.generateContent([prompt, imagePart]);
-  const response = await result.response;
+  const response = result.response;
   return response.text() == "1" ? true : false;
 };
 
@@ -158,6 +158,12 @@ const userData = async (req, res) => {
   try {
     const userId = req.userId;
     const { name, autismRelation, gender, age, location, methods } = req.body;
+    if (!name || !autismRelation || !gender || !age || !location || !methods) {
+      return res.status(400).json({
+        error:
+          "Name, autism relation, gender, age, location and methods are required.",
+      });
+    }
 
     let test = new testSample({
       userId,
@@ -171,7 +177,7 @@ const userData = async (req, res) => {
     test = await test.save();
 
     const existingTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (existingTest.activeTest !== "") {
+    if (existingTest.activeTest != "no activeTest") {
       await testSample.deleteOne({ _id: existingTest.activeTest });
     }
     await User.updateOne({ _id: userId }, { $set: { activeTest: test._id } });
@@ -194,34 +200,46 @@ const postForm = async (req, res) => {
   try {
     const userId = req.userId;
     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 } = req.body;
-    let questions = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10];
+    if (!q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7 || !q8 || !q9 || !q10) {
+      return res.status(400).json({
+        error: "All questions are required.",
+      });
+    }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
-    let questionsArr = [];
-    for (let i = 0; i < questions.length; i++) {
-      if (questions[i] == "yes" || questions[i] == "Yes") {
-        questionsArr.push("Always");
-      } else {
-        questionsArr.push("Never");
+    let response;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const form = new FormData();
+        form.append("image", file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+        response = await axios.post(
+          "https://flask-childface-api-main.onrender.com/childFace",
+          form,
+          {
+            headers: {
+              ...form.getHeaders(),
+            },
+          }
+        );
+        break;
+      } catch (error) {
+        if (i == 2) {
+          return res.status(500).json({ error: error.message });
+        }
+        continue;
       }
     }
 
-    let answersArr = [];
-    for (let i = 0; i < questionsAndAnswers.length; i++) {
-      answersArr.push(questionsAndAnswers[i].mapping[questionsArr[i]]);
-    }
-    let sum = 0;
-    for (let i of answersArr) {
-      sum += i;
-    }
-    sum > 3 ? (sum = 1) : (sum = 0);
-
     await testSample.updateOne(
       { _id: userTest.activeTest },
-      { $set: { form: sum } }
+      { $set: { childFace: response.data.prediction } }
     );
 
     return res.json({
@@ -232,6 +250,49 @@ const postForm = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// const postForm = async (req, res) => {
+//   try {
+//     const userId = req.userId;
+//     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 } = req.body;
+//     let questions = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10];
+//     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
+//     if (userTest.activeTest == "") {
+//       return res.status(404).json({ error: "Active test not found" });
+//     }
+
+//     let questionsArr = [];
+//     for (let i = 0; i < questions.length; i++) {
+//       if (questions[i] == "yes" || questions[i] == "Yes") {
+//         questionsArr.push("Always");
+//       } else {
+//         questionsArr.push("Never");
+//       }
+//     }
+
+//     let answersArr = [];
+//     for (let i = 0; i < questionsAndAnswers.length; i++) {
+//       answersArr.push(questionsAndAnswers[i].mapping[questionsArr[i]]);
+//     }
+//     let sum = 0;
+//     for (let i of answersArr) {
+//       sum += i;
+//     }
+//     sum > 3 ? (sum = 1) : (sum = 0);
+
+//     await testSample.updateOne(
+//       { _id: userTest.activeTest },
+//       { $set: { form: sum } }
+//     );
+
+//     return res.json({
+//       message: "Form Test successfully",
+//       data: sum,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
 
 const childFace = async (req, res) => {
   try {
@@ -247,7 +308,7 @@ const childFace = async (req, res) => {
         .json({ error: "The image does not contain a child's face." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
@@ -305,7 +366,7 @@ const drawing = async (req, res) => {
         .json({ error: "The image does not contain a child's face." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
@@ -363,7 +424,7 @@ const coloring = async (req, res) => {
         .json({ error: "The image does not contain a child's face." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
@@ -421,7 +482,7 @@ const handWriting = async (req, res) => {
         .json({ error: "The image does not contain a child's face." });
     }
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
@@ -469,7 +530,7 @@ const testResult = async (req, res) => {
   try {
     const userId = req.userId;
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "") {
+    if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
     }
 
