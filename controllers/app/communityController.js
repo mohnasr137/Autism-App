@@ -151,8 +151,8 @@ const searchHistory = async (req, res) => {
       },
     ]);
     list = list[0];
-    if (!list) {
-      return res.status(404).json({ message: "There is no search history" });
+    if (!list?.searchHistory?.length) {
+      return res.status(200).json({ message: "Nothing yet." });
     }
 
     return res.status(200).json({ list });
@@ -211,8 +211,8 @@ const showMyPosts = async (req, res) => {
       },
     ]);
     list = list[0];
-    if (!list) {
-      return res.status(404).json({ message: "There is no posts" });
+    if (!list?.posts?.length) {
+      return res.status(200).json({ message: "Nothing yet." });
     }
 
     const listDetails = await Promise.all(
@@ -257,8 +257,8 @@ const post = async (req, res) => {
       },
     ]);
     list = list[0];
-    if (!list) {
-      return res.status(404).json({ message: "Invalid post ID" });
+    if (!list?.comments?.length && !list?.reactions?.length) {
+      return res.status(200).json({ message: "Nothing yet." });
     }
 
     const post = await Post.findOne({ _id: list._id });
