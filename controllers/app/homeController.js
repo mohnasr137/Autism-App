@@ -188,6 +188,9 @@ const showAllHistory = async (req, res) => {
       },
     ]);
     existingUser = existingUser[0];
+    if (!existingUser?.videoHistory?.length) {
+      return res.status(200).json({ message: "Nothing yet." });
+    }
 
     const videosList = existingUser.videoHistory;
     let videos = await youtube.videos.list({
@@ -791,6 +794,9 @@ const showFavorite = async (req, res) => {
       },
     ]);
     list = list[0];
+    if (!list?.favoriteVideos?.length) {
+      return res.status(200).json({ message: "Nothing yet." });
+    }
 
     const videosList = list.favoriteVideos;
     let videos = await youtube.videos.list({
