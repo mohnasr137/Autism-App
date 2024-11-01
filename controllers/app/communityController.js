@@ -1,6 +1,8 @@
 // packages
 import mongoose from "mongoose";
 import axios from "axios";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from "fs";
 
 // imports
 import User from "../../models/user.js";
@@ -9,6 +11,20 @@ import postComment from "../../models/postComment.js";
 import postReaction from "../../models/postReaction.js";
 
 // init
+const genAI = new GoogleGenerativeAI(process.env.GENERATIVE_AI_API_KEY);
+const GenerativeAI = async (buffer, type, prompt) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const imagePart = {
+    inlineData: {
+      data: buffer.toString("base64"),
+      mimeType: type,
+    },
+  };
+  const result = await model.generateContent([prompt, imagePart]);
+  const response = result.response;
+  return response.text();
+};
+
 const url = process.env.API_URL;
 const PostTypes = ["Advice", "Question"];
 const Categories = [
@@ -264,21 +280,20 @@ const createPost = async (req, res) => {
 
     let newPost;
     if (method == "Post") {
-      const { text, category, postType } = req.body;
-      if (!category) {
-        return res.status(400).json({ error: "Category is required." });
-      }
-      if (!Categories.includes(category)) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-      if (!postType) {
-        return res.status(400).json({ error: "Post type is required." });
-      }
-      if (!PostTypes.includes(postType)) {
-        return res.status(404).json({ error: "Post type not found" });
-      }
+      const { text } = req.body;
 
       if (req.files) {
+        const file = req.files[0];
+        const prompt = `this is my text in my post it: "${text}", and i give you the image in my post, please give me only the post type as index from ["Advice", "Question"] and category as index from ["Education", "Documentary", "People & Blogs", "Non profits & Autism", "Science & Technology"] for this post in this format: "index,index"`;
+        const buffer = fs.readFileSync(file.path);
+        const genText = await GenerativeAI(buffer, file.mimetype, prompt);
+        if (!genText) {
+          return res.status(400).json({ error: "Please try again later." });
+        }
+        const genTextArray = genText.split(",");
+        const postTypeIndex = Number(genTextArray[0]);
+        const categoryIndex = Number(genTextArray[1]);
+
         const imagesPath = req.files.map(
           (obj) =>
             req.protocol +
@@ -287,12 +302,13 @@ const createPost = async (req, res) => {
             `${url}/` +
             obj.path.replace("images\\", "")
         );
+
         newPost = new Post({
           userId,
           method,
           text,
-          category,
-          postType,
+          category: Categories[categoryIndex],
+          postType: PostTypes[postTypeIndex],
           images: imagesPath,
         });
         await newPost.save();
