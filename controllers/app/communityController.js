@@ -12,15 +12,20 @@ import postReaction from "../../models/postReaction.js";
 
 // init
 const genAI = new GoogleGenerativeAI(process.env.GENERATIVE_AI_API_KEY);
-const GenerativeAI = async (buffer, type, prompt) => {
+const GenerativeAI = async ({ buffer = "", type = "", prompt }) => {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const imagePart = {
-    inlineData: {
-      data: buffer.toString("base64"),
-      mimeType: type,
-    },
-  };
-  const result = await model.generateContent([prompt, imagePart]);
+  let result;
+  if (buffer != "") {
+    const imagePart = {
+      inlineData: {
+        data: buffer.toString("base64"),
+        mimeType: type,
+      },
+    };
+    result = await model.generateContent([prompt, imagePart]);
+  } else {
+    result = await model.generateContent([prompt]);
+  }
   const response = result.response;
   return response.text();
 };
@@ -286,13 +291,21 @@ const createPost = async (req, res) => {
         const file = req.files[0];
         const prompt = `this is my text in my post it: "${text}", and i give you the image in my post, please give me only the post type as index from ["Advice", "Question"] and category as index from ["Education", "Documentary", "People & Blogs", "Non profits & Autism", "Science & Technology"] for this post in this format: "index,index"`;
         const buffer = fs.readFileSync(file.path);
-        const genText = await GenerativeAI(buffer, file.mimetype, prompt);
+        const genText = await GenerativeAI({
+          buffer,
+          type: file.mimetype,
+          prompt,
+        });
         if (!genText) {
           return res.status(400).json({ error: "Please try again later." });
         }
         const genTextArray = genText.split(",");
-        const postTypeIndex = Number(genTextArray[0]);
-        const categoryIndex = Number(genTextArray[1]);
+        let postTypeIndex = Number(genTextArray[0]);
+        let categoryIndex = Number(genTextArray[1]);
+        if (isNaN(postTypeIndex) || isNaN(categoryIndex)) {
+          postTypeIndex = 0;
+          categoryIndex = 0;
+        }
 
         const imagesPath = req.files.map(
           (obj) =>
@@ -313,12 +326,24 @@ const createPost = async (req, res) => {
         });
         await newPost.save();
       } else {
+        const prompt = `this is my text in my post it: "${text}", please give me only the post type as index from ["Advice", "Question"] and category as index from ["Education", "Documentary", "People & Blogs", "Non profits & Autism", "Science & Technology"] for this post in this format only : "index,index"`;
+        const genText = await GenerativeAI({ prompt });
+        if (!genText) {
+          return res.status(400).json({ error: "Please try again later." });
+        }
+        const genTextArray = genText.split(",");
+        let postTypeIndex = Number(genTextArray[0]);
+        let categoryIndex = Number(genTextArray[1]);
+        if (isNaN(postTypeIndex) || isNaN(categoryIndex)) {
+          postTypeIndex = 0;
+          categoryIndex = 0;
+        }
         newPost = new Post({
           userId,
           method,
           text,
-          category,
-          postType,
+          category: Categories[categoryIndex],
+          postType: PostTypes[postTypeIndex],
         });
         await newPost.save();
       }
@@ -500,14 +525,12 @@ const showPostComments = async (req, res) => {
         },
       ]);
       comment = comment[0];
-      console.log(comment);
       let subcomments = [];
       for (let subcommentId of comment.subcomments) {
         let subcomment = await postComment.aggregate([
           { $match: { _id: new mongoose.Types.ObjectId(subcommentId) } },
         ]);
         subcomment = subcomment[0];
-        console.log(subcomment);
         if (subcomment) {
           subcomments.push(subcomment);
         }
