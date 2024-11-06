@@ -282,8 +282,7 @@ const createPost = async (req, res) => {
     let newPost;
     if (method == "Post") {
       const { text } = req.body;
-
-      if (req.files) {
+      if (req.files.length) {
         const file = req.files[0];
         const prompt = `this is my text in my post it: "${text}", and i give you the image in my post, please give me only the post type as index from ["Advice", "Question"] and category as index from ["Education", "Documentary", "People & Blogs", "Non profits & Autism", "Science & Technology"] for this post in this format: "index,index"`;
         const buffer = fs.readFileSync(file.path);
