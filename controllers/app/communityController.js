@@ -34,6 +34,7 @@ const Categories = [
   "Non profits & Autism",
   "Science & Technology",
 ];
+const Reactions = ["like", "love", "special", "idea"];
 
 // routers
 const search = async (req, res) => {
@@ -787,8 +788,11 @@ const addReaction = async (req, res) => {
     if (!postId) {
       return res.status(400).json({ error: "Post ID is required." });
     }
-    if (!reaction || reaction.length == 0) {
+    if (!reaction) {
       return res.status(400).json({ error: "Reaction is required." });
+    }
+    if (!Reactions.includes(reaction)) {
+      return res.status(404).json({ error: "Reaction not found" });
     }
 
     const existingPost = await Post.findOne(
@@ -821,12 +825,10 @@ const addReaction = async (req, res) => {
 
 const deleteReaction = async (req, res) => {
   try {
-    const { postId, reactionId } = req.query;
+    const userId = req.userId;
+    const { postId } = req.query;
     if (!postId) {
       return res.status(400).json({ error: "Post ID is required." });
-    }
-    if (!reactionId) {
-      return res.status(400).json({ error: "Reaction ID is required." });
     }
 
     const existingPost = await Post.findOne(
@@ -837,12 +839,16 @@ const deleteReaction = async (req, res) => {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    await postReaction.deleteOne({ _id: reactionId });
+    const reaction = await postReaction.findOne({ postId, userId });
+    if (!reaction) {
+      return res.status(404).json({ error: "Reaction not found" });
+    }
+    await reaction.deleteOne();
 
     await Post.updateOne(
       { _id: postId },
       {
-        $pull: { reactions: reactionId },
+        $pull: { reactions: reaction._id },
         $inc: { reactionsCount: -1 },
       }
     );
