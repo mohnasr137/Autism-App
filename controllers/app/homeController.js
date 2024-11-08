@@ -264,7 +264,7 @@ const channel = async (req, res) => {
     const videoIdsArray = videoIds.data.items.map(
       (item) => item.contentDetails.videoId
     );
-    let videos = youtube.videos.list({
+    let videos = await youtube.videos.list({
       part: "snippet,contentDetails,statistics",
       id: videoIdsArray.join(","),
     });
@@ -278,7 +278,7 @@ const channel = async (req, res) => {
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
     });
-
+    
     const fullData = {
       channel: {
         id: channel.data.items[0].id,
