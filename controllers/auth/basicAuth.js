@@ -15,11 +15,9 @@ const signUp = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
     if (!name || !email || !password || !confirmPassword) {
-      return res
-        .status(400)
-        .json({
-          error: "Name, email, password and confirm password are required.",
-        });
+      return res.status(400).json({
+        error: "Name, email, password and confirm password are required.",
+      });
     }
 
     const image =
@@ -44,10 +42,7 @@ const signUp = async (req, res) => {
       await User.updateOne({ email }, { $set: { code } });
       const token = jwt.sign(
         { id: existingUser._id, code: code },
-        process.env.SECRET,
-        {
-          expiresIn: "30d",
-        }
+        process.env.SECRET
       );
       const link =
         req.protocol + "://" + req.get("host") + `${url}/auth/token/${token}`;
@@ -69,9 +64,7 @@ const signUp = async (req, res) => {
     });
     await user.save();
 
-    const token = jwt.sign({ id: user._id, code: code }, process.env.SECRET, {
-      expiresIn: "30d",
-    });
+    const token = jwt.sign({ id: user._id, code: code }, process.env.SECRET);
     const link =
       req.protocol + "://" + req.get("host") + `${url}/auth/token/${token}`;
     sendVerifyEmail(email, link);
@@ -108,9 +101,7 @@ const signIn = async (req, res) => {
       return res.status(403).json({ error: "User email not verified" });
     }
 
-    const token = jwt.sign({ id: existingUser._id }, process.env.SECRET, {
-      expiresIn: "30d",
-    });
+    const token = jwt.sign({ id: existingUser._id }, process.env.SECRET);
     // const userData = {
     //   name: existingUser.name,
     //   email: existingUser.email,

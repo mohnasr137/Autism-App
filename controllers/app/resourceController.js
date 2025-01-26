@@ -3,6 +3,7 @@ import axios from "axios";
 import mongoose from "mongoose";
 
 // imports
+import User from "../../models/user.js";
 import Website from "../../models/website.js";
 
 // init
@@ -53,7 +54,6 @@ const onlineWebsites = async (req, res) => {
   }
 };
 
-
 const offlineWebsites = async (req, res) => {
   try {
     const { number } = req.query;
@@ -76,7 +76,7 @@ const offlineWebsites = async (req, res) => {
 
 const addWebsites = async (req, res) => {
   try {
-    const {fullData} = req.body;
+    const { fullData } = req.body;
 
     for (let website of fullData) {
       website = new Website({
@@ -139,8 +139,11 @@ const addFavorite = async (req, res) => {
     if (!websiteId) {
       return res.status(400).json({ error: "Website ID is required." });
     }
+    const existingWebsite = await Website.findOne(
+      { _id: websiteId },
+      { _id: 1 }
+    );
 
-    const existingWebsite = await Website.findOne({ websiteId }, { _id: 1 });
     if (!existingWebsite) {
       return res.status(404).json({ error: "Website not found" });
     }
@@ -164,7 +167,10 @@ const deleteFavorite = async (req, res) => {
       return res.status(400).json({ error: "Website ID is required." });
     }
 
-    const existingWebsite = await Website.findOne({ websiteId }, { _id: 1 });
+    const existingWebsite = await Website.findOne(
+      { _id: websiteId },
+      { _id: 1 }
+    );
     if (!existingWebsite) {
       return res.status(404).json({ error: "Website not found" });
     }
