@@ -278,7 +278,7 @@ const channel = async (req, res) => {
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
     });
-    
+
     const fullData = {
       channel: {
         id: channel.data.items[0].id,
@@ -405,7 +405,7 @@ const showVideoComments = async (req, res) => {
     }
 
     let existingVideo = await Video.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
+      { $match: { videoId: videoId } },
       {
         $project: {
           comments: { $slice: ["$comments", commentsSkip * 10, 10] },
@@ -419,8 +419,8 @@ const showVideoComments = async (req, res) => {
     }
 
     let fullData = [];
-    for (let commentId in existingVideo.comments) {
-      let comment = await Video.aggregate([
+    for (let commentId of existingVideo.comments) {
+      let comment = await videoComment.aggregate([
         { $match: { _id: new mongoose.Types.ObjectId(commentId) } },
         { $addFields: { subcomments: { $slice: ["$subcomments", 0, 2] } } },
       ]);
@@ -649,6 +649,53 @@ const deleteComment = async (req, res) => {
   }
 };
 
+// const showVideoReactions = async (req, res) => {
+//   try {
+//     const { reactionsSkip, videoId } = req.query;
+//     if (!videoId) {
+//       return res.status(400).json({ error: "Video ID is required." });
+//     }
+//       console.log("hi");
+
+//     let existingVideo;
+//     if (reactionsSkip > 0) {
+//       existingVideo = await Video.aggregate([
+//         { $match: { videoId: new mongoose.Types.ObjectId(videoId) } },
+//         {
+//           $project: {
+//             reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
+//           },
+//         },
+//       ]);
+//       existingVideo = existingVideo[0];
+//             console.log("hi");
+
+//     } else {
+//       existingVideo = await Video.aggregate([
+//         { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
+//         { $addFields: { reactions: { $slice: ["$reactions", 0, 10] } } },
+//       ]);
+//       existingVideo = existingVideo[0];
+//     }
+
+//     if (!existingVideo || existingVideo.length == 0) {
+//       return res.status(400).json({ error: "Video not found" });
+//     }
+
+//     let fullData = [];
+//     for (let i = 0; i < existingVideo.reactions.length; i++) {
+//       let reaction = await videoReaction.findById(existingVideo.reactions[i]);
+//       if (reaction) {
+//         fullData.push(reaction);
+//       }
+//     }
+
+//     return res.status(200).json({ fullData });
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
 const showVideoReactions = async (req, res) => {
   try {
     const { reactionsSkip, videoId } = req.query;
@@ -656,31 +703,27 @@ const showVideoReactions = async (req, res) => {
       return res.status(400).json({ error: "Video ID is required." });
     }
 
-    let existingVideo;
-    if (reactionsSkip > 0) {
-      existingVideo = await Video.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
-        {
-          $project: {
-            reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
-          },
+    let existingVideo = await Video.aggregate([
+      { $match: { videoId: videoId } },
+      {
+        $project: {
+          reactions: { $slice: ["$reactions", reactionsSkip * 10, 10] },
         },
-      ]);
-      existingVideo = existingVideo[0];
-    } else {
-      existingVideo = await Video.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(videoId) } },
-        { $addFields: { reactions: { $slice: ["$reactions", 0, 10] } } },
-      ]);
-      existingVideo = existingVideo[0];
-    }
+      },
+    ]);
+    existingVideo = existingVideo[0];
+
     if (!existingVideo || existingVideo.length == 0) {
       return res.status(400).json({ error: "Video not found" });
     }
 
     let fullData = [];
-    for (let i = 0; i < existingVideo.reactions.length; i++) {
-      let reaction = await videoReaction.findById(existingVideo.reactions[i]);
+    for (let reactionId of existingVideo.reactions) {
+      let reaction = await videoReaction.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(reactionId) } },
+        { $addFields: { subcomments: { $slice: ["$subcomments", 0, 2] } } },
+      ]);
+      reaction = reaction[0];
       if (reaction) {
         fullData.push(reaction);
       }
@@ -688,7 +731,7 @@ const showVideoReactions = async (req, res) => {
 
     return res.status(200).json({ fullData });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
