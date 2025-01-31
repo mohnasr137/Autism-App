@@ -252,7 +252,7 @@ const post = async (req, res) => {
     let list = await Post.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(postId) } },
       {
-        $project: {
+        $addFields: {
           comments: {
             $slice: [{ $reverseArray: "$comments" }, skip * 10, 10],
           },
@@ -264,13 +264,24 @@ const post = async (req, res) => {
     ]);
     list = list[0];
     if (!list?.comments?.length && !list?.reactions?.length) {
-      return res.status(200).json({ message: "Nothing yet." });
+      return res.status(200).json({ message: "Post not found." });
     }
 
-    const post = await Post.findOne({ _id: list._id });
+    let existingUser = await User.findOne(
+      { _id: list.userId },
+      {
+        name: 1,
+        email: 1,
+        gender: 1,
+        image: 1,
+        type: 1,
+        dateOfBirth: 1,
+      }
+    );
+    list.userData = existingUser;
+
     await Post.updateOne({ _id: list._id }, { $inc: { innerViewCount: 1 } });
-    const data = { post, list };
-    return res.status(200).json({ post: data });
+    return res.status(200).json({ data: list });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -525,12 +536,40 @@ const showPostComments = async (req, res) => {
         },
       ]);
       comment = comment[0];
+
+      let existingUser = await User.findOne(
+        { _id: comment.userId },
+        {
+          name: 1,
+          email: 1,
+          gender: 1,
+          image: 1,
+          type: 1,
+          dateOfBirth: 1,
+        }
+      );
+      comment.userData = existingUser;
+
       let subcomments = [];
       for (let subcommentId of comment.subcomments) {
         let subcomment = await postComment.aggregate([
           { $match: { _id: new mongoose.Types.ObjectId(subcommentId) } },
         ]);
         subcomment = subcomment[0];
+
+        let existingUser = await User.findOne(
+          { _id: subcomment.userId },
+          {
+            name: 1,
+            email: 1,
+            gender: 1,
+            image: 1,
+            type: 1,
+            dateOfBirth: 1,
+          }
+        );
+        subcomment.userData = existingUser;
+
         if (subcomment) {
           subcomments.push(subcomment);
         }
