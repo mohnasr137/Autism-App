@@ -2,25 +2,25 @@ import axios from "axios";
 import { google } from "googleapis";
 import FormData from "form-data";
 import PDFDocument from "pdfkit";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from "mongoose";
 
 import testSample from "../../models/testSample.js";
 import User from "../../models/user.js";
 
-const genAI = new GoogleGenerativeAI(process.env.GENERATIVE_AI_API_KEY);
-const GenerativeAI = async (buffer, type, prompt) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const imagePart = {
-    inlineData: {
-      data: buffer.toString("base64"),
-      mimeType: type,
-    },
-  };
-  const result = await model.generateContent([prompt, imagePart]);
-  const response = result.response;
-  return response.text() == "1" ? true : false;
-};
+// const genAI = new GoogleGenerativeAI(process.env.GENERATIVE_AI_API_KEY);
+// const GenerativeAI = async (buffer, type, prompt) => {
+//   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+//   const imagePart = {
+//     inlineData: {
+//       data: buffer.toString("base64"),
+//       mimeType: type,
+//     },
+//   };
+//   const result = await model.generateContent([prompt, imagePart]);
+//   const response = result.response;
+//   return response.text() == "1" ? true : false;
+// };
 
 const youtube = google.youtube({
   version: "v3",
@@ -326,14 +326,16 @@ const childFace = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const prompt =
-      "Does this image contain a child's face? Please respond with '1' for yes and '0' for no.";
-    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    if (!genText) {
-      return res
-        .status(400)
-        .json({ error: "The image does not contain a child's face." });
-    }
+
+    // const prompt =
+    //   "Does this image contain a child's face? Please respond with '1' for yes and '0' for no.";
+    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
+    // if (!genText) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "The image does not contain a child's face." });
+    // }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -386,14 +388,16 @@ const drawing = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const prompt =
-      "Does this image contain a child's drawing? Please respond with '1' for yes and '0' for no.";
-    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    if (!genText) {
-      return res
-        .status(400)
-        .json({ error: "The image does not contain a child's drawing." });
-    }
+
+    // const prompt =
+    //   "Does this image contain a child's drawing? Please respond with '1' for yes and '0' for no.";
+    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
+    // if (!genText) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "The image does not contain a child's drawing." });
+    // }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -446,14 +450,16 @@ const coloring = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const prompt =
-      "Does this image contain a child's coloring? Please respond with '1' for yes and '0' for no.";
-    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    if (!genText) {
-      return res
-        .status(400)
-        .json({ error: "The image does not contain a child's coloring." });
-    }
+
+    // const prompt =
+    //   "Does this image contain a child's coloring? Please respond with '1' for yes and '0' for no.";
+    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
+    // if (!genText) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "The image does not contain a child's coloring." });
+    // }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -506,14 +512,16 @@ const handWriting = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const prompt =
-      "Does this image contain a child's handwriting? Please respond with '1' for yes and '0' for no.";
-    const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    if (!genText) {
-      return res
-        .status(400)
-        .json({ error: "The image does not contain a child's handwriting." });
-    }
+
+    // const prompt =
+    //   "Does this image contain a child's handwriting? Please respond with '1' for yes and '0' for no.";
+    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
+    // if (!genText) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "The image does not contain a child's handwriting." });
+    // }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -796,7 +804,7 @@ const showAllHistory = async (req, res) => {
     list = list[0];
 
     const listDetails = await Promise.all(
-      list.videoHistory.map(async (element) => {
+      list.testHistory.map(async (element) => {
         const testData = await testSample.findOne(
           { _id: element },
           {
@@ -824,7 +832,7 @@ const deleteHistory = async (req, res) => {
       return res.status(400).json({ error: "testId ID is required." });
     }
 
-    const existingTest = await testSample.findOne({ testId }, { _id: 1 });
+    const existingTest = await testSample.findOne({ _id: testId }, { _id: 1 });
     if (!existingTest) {
       return res.status(404).json({ error: "test not found" });
     }
