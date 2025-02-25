@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { promisify } from "util";
+import fs from "fs";
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +25,7 @@ const app = express();
 const port = process.env.PORT;
 const url = process.env.API_URL;
 const connectionString = process.env.CONNECTION_STRING;
+const readdirAsync = promisify(fs.readdir);
 
 // middlewares
 app.use(cors());
@@ -45,6 +48,26 @@ app.use(`${url}/testing`, testingRouter);
 app.use(`${url}/community`, communityRouter);
 app.use(`${url}/resource`, resourceRouter);
 app.use(`${url}/portfolio`, portfolioRouter);
+
+app.use(`${url}/data`, async (req, res) => {
+  try {
+    const portfolio = path.join(__dirname, "images", "portfolio");
+    const uploads = path.join(__dirname, "images", "uploads");
+
+    const pfiles = await readdirAsync(portfolio, { withFileTypes: true });
+    const portfolioFiles = pfiles.map((file) => file.name);
+
+    const ufiles = await readdirAsync(uploads, { withFileTypes: true });
+    const uploadsFiles = ufiles.map((file) => file.name);
+
+    return res
+      .status(200)
+      .json({ portfolio: portfolioFiles, uploads: uploadsFiles });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 app.use(`/:error`, (req, res) => {
   const { error } = req.params;
   return res.send(
