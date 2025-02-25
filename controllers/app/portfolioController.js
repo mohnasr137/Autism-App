@@ -16,11 +16,14 @@ const imageUpload = async (req, res) => {
       "://" +
       req.get("host") +
       `${url}/` +
-      req.file.path.replace("images\\", "");
+      "portfolio/" +
+      req.file.filename;
 
     await User.updateOne({ _id: userId }, { $set: { image: imagesPath } });
 
-    return res.status(200).json({ message: "Image uploaded successfuly" });
+    return res
+      .status(200)
+      .json({ message: "Image uploaded successfuly", image: imagesPath });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
