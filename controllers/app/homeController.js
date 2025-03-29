@@ -927,6 +927,18 @@ const deleteFavorite = async (req, res) => {
   }
 };
 
+const deleteAllFavorite = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    await User.updateOne({ _id: userId }, { $set: { favoriteVideos: [] } });
+
+    return res.status(200).json({ message: "delete all favorite successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   showAllVideos,
   showAllChannels,
@@ -944,4 +956,5 @@ export {
   showFavorite,
   addFavorite,
   deleteFavorite,
+  deleteAllFavorite,
 };

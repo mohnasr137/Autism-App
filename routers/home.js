@@ -19,6 +19,7 @@ import {
   showFavorite,
   addFavorite,
   deleteFavorite,
+  deleteAllFavorite,
 } from "../controllers/app/homeController.js";
 
 // init
@@ -41,6 +42,7 @@ homeRouter.delete("/video/delete/reaction", deleteReaction);
 homeRouter.get("/favorite/show", showFavorite);
 homeRouter.post("/favorite/add", addFavorite);
 homeRouter.delete("/favorite/delete", deleteFavorite);
+homeRouter.delete("/favorite/deleteAll", deleteAllFavorite);
 
 // exports
 export default homeRouter;
