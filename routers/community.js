@@ -38,7 +38,18 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5000000 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype == "image/jpeg" || file.mimetype == "image/png") {
+    if (
+      file.mimetype === "image/jpeg" ||
+      file.mimetype === "image/png" ||
+      file.mimetype === "image/gif" ||
+      file.mimetype === "image/webp" ||
+      file.mimetype === "image/svg+xml" ||
+      file.mimetype === "image/bmp" ||
+      file.mimetype === "image/tiff" ||
+      file.mimetype === "image/x-icon" ||
+      file.mimetype === "image/heic" ||
+      file.mimetype === "image/heif"
+    ) {
       cb(null, true);
     } else {
       cb(new Error("Invalid file type"));

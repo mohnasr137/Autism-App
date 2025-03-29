@@ -76,7 +76,7 @@ app.use(`/:error`, (req, res) => {
 });
 
 // connection
-mongoose
+await mongoose
   .connect(connectionString)
   .then(() => {
     console.log("mongoose connection successfully");
