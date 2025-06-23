@@ -1,6 +1,8 @@
 // packages
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 // init
 const api_url = process.env.API_URL;
