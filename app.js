@@ -4,9 +4,9 @@ import path from "path";
 import mongoose from "mongoose";
 import cors from "cors";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
 import { promisify } from "util";
 import fs from "fs";
+import dotenv from "dotenv";
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +29,6 @@ const readdirAsync = promisify(fs.readdir);
 
 // middlewares
 app.use(cors());
-app.options("*", cors());
 app.use(express.json());
 app.use(
   `${url}/uploads`,

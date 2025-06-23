@@ -2,6 +2,8 @@
 import { google } from "googleapis";
 import mongoose from "mongoose";
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 
 // imports
 import User from "../../models/user.js";

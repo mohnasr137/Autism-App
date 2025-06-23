@@ -1,5 +1,7 @@
 // imports
 import User from "../../models/user.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 // init
 const url = process.env.API_URL;

@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
+import dotenv from "dotenv";
+dotenv.config();
 
 // imports
 import User from "../../models/user.js";

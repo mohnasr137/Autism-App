@@ -4,6 +4,8 @@ import FormData from "form-data";
 import PDFDocument from "pdfkit";
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 
 import testSample from "../../models/testSample.js";
 import User from "../../models/user.js";
@@ -245,7 +247,7 @@ const postForm = async (req, res) => {
           ],
         };
         response = await axios.post(
-          "https://flask-ml-28g3.onrender.com/predict",
+          "http://localhost:5000/predict",
           data,
           {
             headers: {
@@ -350,7 +352,7 @@ const childFace = async (req, res) => {
           contentType: file.mimetype,
         });
         response = await axios.post(
-          "https://flask-childface-api-main.onrender.com/childFace",
+          "http://localhost:5000/childFace",
           form,
           {
             headers: {
@@ -412,7 +414,7 @@ const drawing = async (req, res) => {
           contentType: file.mimetype,
         });
         response = await axios.post(
-          "https://flask-coloring-api-main.onrender.com/coloring",
+          "http://localhost:5000/coloring",
           form,
           {
             headers: {
@@ -474,7 +476,7 @@ const coloring = async (req, res) => {
           contentType: file.mimetype,
         });
         response = await axios.post(
-          "https://flask-coloring-api-main.onrender.com/coloring",
+          "http://localhost:5000/coloring",
           form,
           {
             headers: {
@@ -536,7 +538,7 @@ const handWriting = async (req, res) => {
           contentType: file.mimetype,
         });
         response = await axios.post(
-          "https://flask-handwriting-api-main.onrender.com/handWriting",
+          "http://localhost:5000/handWriting",
           form,
           {
             headers: {
