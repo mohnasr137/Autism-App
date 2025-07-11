@@ -200,11 +200,36 @@ const postForm = async (req, res) => {
   try {
     const userId = req.userId;
     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 } = req.body;
-    if (!q1 || !q2 || !q3 || !q4 || !q5 || !q6 || !q7 || !q8 || !q9 || !q10) {
-      return res.status(400).json({
-        error: "All questions are required.",
-      });
+    const questions = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10];
+
+    for (let i = 0; i < questions.length; i++) {
+      const allowedValues = {
+        0: questionsAndAnswers[i].mapping["Never"],
+        1: questionsAndAnswers[i].mapping["Always"],
+        yes: questionsAndAnswers[i].mapping["Always"],
+        no: questionsAndAnswers[i].mapping["Never"],
+      };
+
+      const q = questions[i];
+      if (q == null) {
+        return res.status(400).json({
+          error: `Question ${
+            i + 1
+          } is required (must be 0, 1, "yes", or "no").`,
+        });
+      }
+
+      const normalizedQ = typeof q === "string" ? q.toLowerCase() : q;
+
+      if (!(normalizedQ in allowedValues)) {
+        return res.status(400).json({
+          error: `Question ${i + 1} must be 0, 1, "yes", or "no".`,
+        });
+      }
+
+      questions[i] = allowedValues[normalizedQ];
     }
+
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -215,16 +240,16 @@ const postForm = async (req, res) => {
       try {
         const data = {
           data: [
-            q1,
-            q2,
-            q3,
-            q4,
-            q5,
-            q6,
-            q7,
-            q8,
-            q9,
-            q10,
+            questions[0],
+            questions[1],
+            questions[2],
+            questions[3],
+            questions[4],
+            questions[5],
+            questions[6],
+            questions[7],
+            questions[8],
+            questions[9],
             0,
             0,
             0,
@@ -246,15 +271,12 @@ const postForm = async (req, res) => {
             0,
           ],
         };
-        response = await axios.post(
-          "http://localhost:5000/predict",
-          data,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        console.log(data);
+        response = await axios.post("http://localhost:5000/predict", data, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         break;
       } catch (error) {
         if (i == 2) {
@@ -268,10 +290,12 @@ const postForm = async (req, res) => {
       { _id: userTest.activeTest },
       { $set: { form: response.data.prediction } }
     );
+    let hasAutism = response.data.prediction == 1 ? "ASD" : "Non-ASD";
+    console.log(response.data.prediction);
 
     return res.json({
       message: "Form Test successfully",
-      data: response.data.prediction,
+      data: hasAutism,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -351,15 +375,11 @@ const childFace = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post(
-          "http://localhost:5000/childFace",
-          form,
-          {
-            headers: {
-              ...form.getHeaders(),
-            },
-          }
-        );
+        response = await axios.post("http://localhost:5000/childFace", form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
         break;
       } catch (error) {
         if (i == 2) {
@@ -373,10 +393,11 @@ const childFace = async (req, res) => {
       { _id: userTest.activeTest },
       { $set: { childFace: response.data.prediction } }
     );
+    let hasAutism = response.data.prediction == 1 ? "ASD" : "Non-ASD";
 
     return res.json({
       message: "ChildFace Test successfully",
-      data: response.data.prediction,
+      data: hasAutism,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -413,15 +434,11 @@ const drawing = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post(
-          "http://localhost:5000/coloring",
-          form,
-          {
-            headers: {
-              ...form.getHeaders(),
-            },
-          }
-        );
+        response = await axios.post("http://localhost:5000/coloring", form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
         break;
       } catch (error) {
         if (i == 2) {
@@ -475,15 +492,11 @@ const coloring = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post(
-          "http://localhost:5000/coloring",
-          form,
-          {
-            headers: {
-              ...form.getHeaders(),
-            },
-          }
-        );
+        response = await axios.post("http://localhost:5000/coloring", form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
         break;
       } catch (error) {
         if (i == 2) {
@@ -497,10 +510,11 @@ const coloring = async (req, res) => {
       { _id: userTest.activeTest },
       { $set: { coloring: response.data.prediction } }
     );
+    let hasAutism = response.data.prediction == 0 ? "ASD" : "Non-ASD";
 
     return res.json({
       message: "Coloring Test successfully",
-      data: response.data.prediction,
+      data: hasAutism,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -537,15 +551,11 @@ const handWriting = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post(
-          "http://localhost:5000/handWriting",
-          form,
-          {
-            headers: {
-              ...form.getHeaders(),
-            },
-          }
-        );
+        response = await axios.post("http://localhost:5000/handWriting", form, {
+          headers: {
+            ...form.getHeaders(),
+          },
+        });
         break;
       } catch (error) {
         if (i == 2) {
@@ -559,10 +569,11 @@ const handWriting = async (req, res) => {
       { _id: userTest.activeTest },
       { $set: { handWriting: response.data.prediction } }
     );
+    let hasAutism = response.data.prediction == 0 ? "ASD" : "Non-ASD";
 
     return res.json({
       message: "HandWriting Test successfully",
-      data: response.data.prediction,
+      data: hasAutism,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

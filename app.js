@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { promisify } from "util";
 import fs from "fs";
 import dotenv from "dotenv";
+import ngrok from "ngrok";
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,4 +84,12 @@ await mongoose
   .catch((err) => {
     console.log(err);
   });
-app.listen(port, console.log(`server is listen on http://localhost:${port}`));
+
+app.listen(port, async () => {
+  console.log(`server is listen on http://localhost:${port}`);
+  const url = await ngrok.connect({
+    addr: port,
+    authtoken: "2sxgo72zf5hsbVIMwXA9hhchfC0_4s37p48o6RvDzi6T3KWAu",
+  });
+  console.log(`Ngrok tunnel: ${url}`);
+});
