@@ -28,6 +28,7 @@ const youtube = google.youtube({
   version: "v3",
   auth: process.env.API_KEY,
 });
+const ML_API_URL = process.env.ML_API_URL || "http://localhost:5000";
 const defaultRegionCode = "US";
 const defaultRelevanceLanguage = "en";
 const defaultVideoSyndicated = "true";
@@ -272,7 +273,7 @@ const postForm = async (req, res) => {
           ],
         };
         console.log(data);
-        response = await axios.post("http://localhost:5000/predict", data, {
+        response = await axios.post(`${ML_API_URL}/predict`, data, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -291,7 +292,6 @@ const postForm = async (req, res) => {
       { $set: { form: response.data.prediction } }
     );
     let hasAutism = response.data.prediction == 1 ? "ASD" : "Non-ASD";
-    console.log(response.data.prediction);
 
     return res.json({
       message: "Form Test successfully",
@@ -302,49 +302,6 @@ const postForm = async (req, res) => {
   }
 };
 
-// const postForm = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-//     const { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 } = req.body;
-//     let questions = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10];
-//     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-//     if (userTest.activeTest == "no activeTest") {
-//       return res.status(404).json({ error: "Active test not found" });
-//     }
-
-//     let questionsArr = [];
-//     for (let i = 0; i < questions.length; i++) {
-//       if (questions[i] == "yes" || questions[i] == "Yes") {
-//         questionsArr.push("Always");
-//       } else {
-//         questionsArr.push("Never");
-//       }
-//     }
-
-//     let answersArr = [];
-//     for (let i = 0; i < questionsAndAnswers.length; i++) {
-//       answersArr.push(questionsAndAnswers[i].mapping[questionsArr[i]]);
-//     }
-//     let sum = 0;
-//     for (let i of answersArr) {
-//       sum += i;
-//     }
-//     sum > 3 ? (sum = 1) : (sum = 0);
-
-//     await testSample.updateOne(
-//       { _id: userTest.activeTest },
-//       { $set: { form: sum } }
-//     );
-
-//     return res.json({
-//       message: "Form Test successfully",
-//       data: sum,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
-
 const childFace = async (req, res) => {
   try {
     const userId = req.userId;
@@ -352,15 +309,6 @@ const childFace = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-
-    // const prompt =
-    //   "Does this image contain a child's face? Please respond with '1' for yes and '0' for no.";
-    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    // if (!genText) {
-    //   return res
-    //     .status(400)
-    //     .json({ error: "The image does not contain a child's face." });
-    // }
 
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
@@ -375,7 +323,7 @@ const childFace = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post("http://localhost:5000/childFace", form, {
+        response = await axios.post(`${ML_API_URL}/childFace`, form, {
           headers: {
             ...form.getHeaders(),
           },
@@ -412,15 +360,6 @@ const drawing = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // const prompt =
-    //   "Does this image contain a child's drawing? Please respond with '1' for yes and '0' for no.";
-    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    // if (!genText) {
-    //   return res
-    //     .status(400)
-    //     .json({ error: "The image does not contain a child's drawing." });
-    // }
-
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -434,7 +373,7 @@ const drawing = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post("http://localhost:5000/coloring", form, {
+        response = await axios.post(`${ML_API_URL}/drawing`, form, {
           headers: {
             ...form.getHeaders(),
           },
@@ -470,15 +409,6 @@ const coloring = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // const prompt =
-    //   "Does this image contain a child's coloring? Please respond with '1' for yes and '0' for no.";
-    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    // if (!genText) {
-    //   return res
-    //     .status(400)
-    //     .json({ error: "The image does not contain a child's coloring." });
-    // }
-
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -492,7 +422,7 @@ const coloring = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post("http://localhost:5000/coloring", form, {
+        response = await axios.post(`${ML_API_URL}/coloring`, form, {
           headers: {
             ...form.getHeaders(),
           },
@@ -529,15 +459,6 @@ const handWriting = async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // const prompt =
-    //   "Does this image contain a child's handwriting? Please respond with '1' for yes and '0' for no.";
-    // const genText = await GenerativeAI(file.buffer, file.mimetype, prompt);
-    // if (!genText) {
-    //   return res
-    //     .status(400)
-    //     .json({ error: "The image does not contain a child's handwriting." });
-    // }
-
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
     if (userTest.activeTest == "no activeTest") {
       return res.status(404).json({ error: "Active test not found" });
@@ -551,7 +472,7 @@ const handWriting = async (req, res) => {
           filename: file.originalname,
           contentType: file.mimetype,
         });
-        response = await axios.post("http://localhost:5000/handWriting", form, {
+        response = await axios.post(`${ML_API_URL}/handWriting`, form, {
           headers: {
             ...form.getHeaders(),
           },
@@ -584,33 +505,40 @@ const testResult = async (req, res) => {
   try {
     const userId = req.userId;
     const userTest = await User.findOne({ _id: userId }, { activeTest: 1 });
-    if (userTest.activeTest == "no activeTest") {
-      return res.status(404).json({ error: "Active test not found" });
+    if (!userTest || userTest.activeTest === "no activeTest") {
+      return res.status(404).json({ status: false, error: "Active test not found" });
     }
 
     const test = await testSample.findOne(
       { _id: userTest.activeTest },
-      { _id: 0, form: 1, childFace: 1, drawing: 1, coloring: 1, handWriting: 1 }
+      { form: 1, childFace: 1, drawing: 1, coloring: 1, handWriting: 1 }
     );
     if (!test) {
-      return res.status(404).json({ error: "Test sample not found" });
+      return res.status(404).json({ status: false, error: "Test sample not found" });
     }
 
-    let testResult = 0;
-    for (let [key, value] of Object.entries(test._doc)) {
-      if (value == -1) {
+    const metricKeys = ["form", "childFace", "drawing", "coloring", "handWriting"];
+    let testScore = 0;
+    let completedMetrics = 0;
+
+    for (const key of metricKeys) {
+      const val = test[key];
+      if (val === undefined || val === -1) {
         continue;
-      } else if (value == 0) {
-        testResult -= acc[key];
+      }
+      completedMetrics++;
+      if (val === 0) {
+        testScore -= (acc[key] || 80);
       } else {
-        testResult += acc[key];
+        testScore += (acc[key] || 80);
       }
     }
-    testResult > 0 ? (testResult = 1) : (testResult = 0);
+
+    const calculatedResult = testScore > 0 ? 1 : 0;
 
     await testSample.updateOne(
       { _id: userTest.activeTest },
-      { result: testResult }
+      { result: calculatedResult }
     );
     await User.updateOne(
       { _id: userId },
@@ -621,13 +549,15 @@ const testResult = async (req, res) => {
       { $set: { activeTest: "no activeTest" } }
     );
 
-    return res.json({
+    return res.status(200).json({
+      status: true,
       message: "Testing successfully",
-      testResult,
+      testResult: calculatedResult,
       testId: userTest.activeTest,
+      completedMetrics,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ status: false, error: error.message });
   }
 };
 
@@ -635,7 +565,7 @@ const resultPdf = async (req, res) => {
   try {
     const { testId } = req.query;
     if (!testId) {
-      return res.status(400).json({ error: "Test ID is required." });
+      return res.status(400).json({ status: false, error: "Test ID is required." });
     }
     const test = await testSample.findOne(
       { _id: testId },
@@ -645,17 +575,22 @@ const resultPdf = async (req, res) => {
         drawing: 1,
         coloring: 1,
         handWriting: 1,
+        name: 1,
+        age: 1,
+        gender: 1,
+        result: 1,
+        createdAt: 1,
       }
     );
     if (!test) {
-      return res.status(404).json({ error: "Test sample not found" });
+      return res.status(404).json({ status: false, error: "Test sample not found" });
     }
 
     const numberToString = (x) => {
-      if (x == -1) {
-        return "not used";
+      if (x === -1 || x === undefined) {
+        return "Not Conducted";
       } else {
-        return x == 1 ? "autism" : "no autism";
+        return x === 1 ? "Positive (ASD)" : "Negative (Non-ASD)";
       }
     };
     const testString = {
@@ -666,71 +601,86 @@ const resultPdf = async (req, res) => {
       handWriting: numberToString(test.handWriting),
     };
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=generated.pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Autismo_Report_${testId}.pdf`
+    );
     doc.pipe(res);
-    doc.moveDown(8);
-    doc.fontSize(24).text("Testing Result", { align: "center" }).moveDown();
-    doc.fontSize(18);
 
-    const headers = ["Models", "Accuracy", "Result"];
+    // Header
+    doc.fontSize(22).font("Helvetica-Bold").text("Autismo", { align: "center" });
+    doc.fontSize(14).font("Helvetica").text("Diagnostic Screening Assessment Report", { align: "center" });
+    doc.moveDown(1.5);
+
+    // Subject Details
+    doc.fontSize(11).font("Helvetica-Bold").text("Assessment Details:");
+    doc.font("Helvetica").fontSize(10);
+    doc.text(`Patient / Child Name: ${test.name || "N/A"}`);
+    doc.text(`Age: ${test.age || "N/A"} | Gender: ${test.gender || "N/A"}`);
+    doc.text(`Assessment Date: ${test.createdAt ? new Date(test.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}`);
+    doc.text(`Overall Screening Verdict: ${test.result === 1 ? "Positive (ASD Indicated)" : test.result === 0 ? "Negative (Non-ASD Indicated)" : "Inconclusive"}`);
+    doc.moveDown(1.5);
+
+    // Table Data
+    const headers = ["Test Modality", "Model Benchmark", "Evaluation Result"];
     const data = [
-      ["form", `${acc.form}%`, testString.form],
-      ["child-face", `${acc.childFace}%`, testString.childFace],
-      ["coloring", `${acc.coloring}%`, testString.coloring],
-      ["handwriting", `${acc.handWriting}%`, testString.handWriting],
+      ["Questionnaire (AQ-10)", `${acc.form}%`, testString.form],
+      ["Facial Features", `${acc.childFace}%`, testString.childFace],
+      ["Drawing Analysis", `${acc.drawing}%`, testString.drawing],
+      ["Coloring Analysis", `${acc.coloring}%`, testString.coloring],
+      ["Handwriting Analysis", `${acc.handWriting}%`, testString.handWriting],
     ];
 
-    const columnWidths = [160, 160, 160];
-    const startX = 70;
-    let startY = 260;
-    const cellHeight = 40;
+    const columnWidths = [180, 140, 180];
+    const startX = 50;
+    let startY = 240;
+    const cellHeight = 32;
 
-    const drawRow = (row, y) => {
+    const drawRow = (row, y, isHeader = false) => {
       let x = startX;
+      doc.font(isHeader ? "Helvetica-Bold" : "Helvetica").fontSize(10);
       row.forEach((cell, index) => {
         const textWidth = doc.widthOfString(cell);
         const textX = x + (columnWidths[index] - textWidth) / 2;
         const textY = y + (cellHeight - doc.currentLineHeight()) / 2;
-
         doc.text(cell, textX, textY, { width: columnWidths[index] });
         x += columnWidths[index];
       });
     };
-    drawRow(headers, startY);
+
+    drawRow(headers, startY, true);
 
     doc
       .moveTo(startX, startY + cellHeight)
-      .lineTo(
-        startX + columnWidths.reduce((a, b) => a + b, 0),
-        startY + cellHeight
-      )
+      .lineTo(startX + columnWidths.reduce((a, b) => a + b, 0), startY + cellHeight)
       .stroke();
 
     data.forEach((row, rowIndex) => {
       const currentY = startY + (rowIndex + 1) * cellHeight;
-      drawRow(row, currentY);
+      drawRow(row, currentY, false);
       doc
         .moveTo(startX, currentY + cellHeight)
-        .lineTo(
-          startX + columnWidths.reduce((a, b) => a + b, 0),
-          currentY + cellHeight
-        )
+        .lineTo(startX + columnWidths.reduce((a, b) => a + b, 0), currentY + cellHeight)
         .stroke();
     });
 
+    // Medical Disclaimer Footer
+    const footerY = startY + (data.length + 2) * cellHeight;
     doc
-      .fontSize(12)
+      .fontSize(9)
+      .font("Helvetica-Oblique")
       .text(
-        "Note: The accuracy of the system can be quite variable due to factors such as poor image quality or not following the provided guidelines. However, in most cases, the accuracy is generally around 90%.",
-        85,
-        480
+        "Important Notice: Autismo is an AI-powered supportive early-screening instrument. Findings in this report do not represent a definitive medical diagnosis. For clinical confirmation and therapeutic guidance, please consult a certified developmental pediatrician or neurologist.",
+        50,
+        footerY,
+        { width: 500, align: "center" }
       );
 
     doc.end();
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ status: false, error: error.message });
   }
 };
 
@@ -738,7 +688,7 @@ const recommendVideos = async (req, res) => {
   try {
     const { testId } = req.query;
     if (!testId) {
-      return res.status(400).json({ error: "Test ID is required." });
+      return res.status(400).json({ status: false, error: "Test ID is required." });
     }
 
     const existingTest = await testSample.findOne(
@@ -746,15 +696,10 @@ const recommendVideos = async (req, res) => {
       { result: 1 }
     );
     if (!existingTest) {
-      return res.status(404).json({ error: "Test sample not found" });
+      return res.status(404).json({ status: false, error: "Test sample not found" });
     }
 
-    let text = "";
-    if (existingTest.result == 1) {
-      text = "autism";
-    } else {
-      text = `"autism" && "Awareness"`;
-    }
+    let text = existingTest.result === 1 ? "autism therapy intervention" : `"autism" && "awareness"`;
     let params = {
       part: "snippet",
       q: text,
@@ -768,41 +713,54 @@ const recommendVideos = async (req, res) => {
 
     const videos = await youtube.search.list(params);
     const fullData = await Promise.all(
-      videos.data.items.map(async (item) => {
-        const channel = await youtube.channels.list({
-          part: "snippet",
-          id: item.snippet.channelId,
-        });
+      (videos.data.items || []).map(async (item) => {
+        let channelSnippet = {};
+        try {
+          const channel = await youtube.channels.list({
+            part: "snippet",
+            id: item.snippet.channelId,
+          });
+          if (channel.data.items && channel.data.items.length > 0) {
+            channelSnippet = channel.data.items[0];
+          }
+        } catch (chErr) {
+          console.warn("Channel lookup error:", chErr.message);
+        }
+
+        const videoData = {
+          id: item.id,
+          title: item.snippet.title,
+          publishedAt: item.snippet.publishedAt,
+          thumbnails: item.snippet.thumbnails,
+          url: `https://www.youtube.com/watch?v=${item.id.videoId || item.id}`,
+        };
+
+        const channelData = {
+          id: channelSnippet.id || item.snippet.channelId,
+          title: channelSnippet.snippet ? channelSnippet.snippet.title : item.snippet.channelTitle,
+          thumbnails: channelSnippet.snippet ? channelSnippet.snippet.thumbnails : null,
+          url: channelSnippet.snippet?.customUrl
+            ? `https://www.youtube.com/${channelSnippet.snippet.customUrl}`
+            : `https://www.youtube.com/channel/${item.snippet.channelId}`,
+        };
+
         return {
-          vedio: {
-            id: item.id,
-            title: item.snippet.title,
-            publishedAt: item.snippet.publishedAt,
-            thumbnails: item.snippet.thumbnails,
-            url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-          },
-          channel: {
-            id: channel.data.items[0].id,
-            title: channel.data.items[0].snippet.title,
-            thumbnails: channel.data.items[0].snippet.thumbnails,
-            url: `https://www.youtube.com/${channel.data.items[0].snippet.customUrl}`,
-          },
+          video: videoData,
+          vedio: videoData,
+          channel: channelData,
         };
       })
     );
-    return res.status(200).json(fullData);
+    return res.status(200).json({ status: true, fullData });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ status: false, error: error.message });
   }
 };
 
 const showAllHistory = async (req, res) => {
   try {
     const userId = req.userId;
-    const { historySkip } = req.query;
-    if (!historySkip) {
-      return res.status(400).json({ error: "historySkip is required." });
-    }
+    const historySkip = Math.max(0, parseInt(req.query.historySkip || 0, 10));
 
     let list = await User.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
@@ -815,6 +773,10 @@ const showAllHistory = async (req, res) => {
       },
     ]);
     list = list[0];
+
+    if (!list || !list.testHistory || list.testHistory.length === 0) {
+      return res.status(200).json({ status: true, message: [] });
+    }
 
     const listDetails = await Promise.all(
       list.testHistory.map(async (element) => {
@@ -831,9 +793,9 @@ const showAllHistory = async (req, res) => {
         return testData;
       })
     );
-    return res.status(200).json({ message: listDetails });
+    return res.status(200).json({ status: true, message: listDetails.filter(Boolean) });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ status: false, message: error.message });
   }
 };
 
@@ -842,21 +804,22 @@ const deleteHistory = async (req, res) => {
     const userId = req.userId;
     const { testId } = req.query;
     if (!testId) {
-      return res.status(400).json({ error: "testId ID is required." });
+      return res.status(400).json({ status: false, error: "testId is required." });
     }
 
     const existingTest = await testSample.findOne({ _id: testId }, { _id: 1 });
     if (!existingTest) {
-      return res.status(404).json({ error: "test not found" });
+      return res.status(404).json({ status: false, error: "Test not found" });
     }
 
     await User.updateOne({ _id: userId }, { $pull: { testHistory: testId } });
+    await testSample.deleteOne({ _id: testId });
 
     return res
       .status(200)
-      .json({ message: "delete video history successfully" });
+      .json({ status: true, message: "delete test history successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ status: false, message: error.message });
   }
 };
 

@@ -5,7 +5,7 @@ const userSchema = mongoose.Schema({
     required: true,
     type: String,
     trim: true,
-    match: /^[A-Za-z0-9]*$/,
+    match: /^[A-Za-z0-9\s._'-]+$/,
   },
   email: {
     required: true,
@@ -111,7 +111,11 @@ const userSchema = mongoose.Schema({
       trim: true,
     },
   ],
-});
+},
+{
+  timestamps: true,
+}
+);
 
 const User = mongoose.model("User", userSchema);
 export default User;

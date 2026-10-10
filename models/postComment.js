@@ -17,11 +17,6 @@ const postCommentSchema = mongoose.Schema(
       type: String,
       trim: true,
     },
-    comment: {
-      required: true,
-      type: String,
-      trim: true,
-    },
     subcomment: {
       type: Boolean,
       default: false,
