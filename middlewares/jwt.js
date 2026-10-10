@@ -5,27 +5,38 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // init
-const api_url = process.env.API_URL;
-const arr = [
+const api_url = process.env.API_URL || "/api/v1";
+const tokenRegex = new RegExp(`^${api_url}/auth/token/.+$`);
+
+const publicRoutes = [
   { url: `${api_url}/auth/signUp`, method: "POST" },
   { url: `${api_url}/auth/signIn`, method: "POST" },
   { url: `${api_url}/auth/sendPassEmail`, method: "POST" },
   { url: `${api_url}/auth/activeResetPass`, method: "POST" },
   { url: `${api_url}/auth/resetPassword`, method: "POST" },
   { url: `${api_url}/resource/showAllWebsites`, method: "GET" },
-  { url: /^\/api\/v1\/auth\/token\/.+$/, method: "GET" },
+  { url: `${api_url}/portfolio/aboutApp`, method: "GET" },
+  { url: `${api_url}/portfolio/frequentQuestions`, method: "GET" },
+  { url: `${api_url}/portfolio/legalInformation`, method: "GET" },
+  { url: `${api_url}/data`, method: "GET" },
+  { url: tokenRegex, method: "GET" },
 ];
 
-// routers
+// middleware
 const authJwt = async (req, res, next) => {
   try {
-    const { url: reqUrl, method: reqMethod } = req;
-    for (const element of arr) {
-      if (element.method != reqMethod) continue;
+    // Allow CORS preflight requests
+    if (req.method === "OPTIONS") {
+      return next();
+    }
 
-      if (typeof element.url == "string") {
+    const { url: reqUrl, method: reqMethod } = req;
+    for (const element of publicRoutes) {
+      if (element.method !== reqMethod) continue;
+
+      if (typeof element.url === "string") {
         const baseUrl = reqUrl.split("?")[0];
-        if (baseUrl == element.url) {
+        if (baseUrl === element.url) {
           return next();
         }
       } else if (element.url instanceof RegExp && element.url.test(reqUrl)) {
@@ -35,26 +46,43 @@ const authJwt = async (req, res, next) => {
 
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
-      return res.status(401).json({ error: "No token provided" });
+      return res.status(401).json({ status: false, error: "No token provided" });
     }
 
-    const token = authHeader.split(" ")[1];
-    const isVerify = jwt.verify(token, process.env.SECRET);
-    if (!isVerify) {
-      return res.status(401).json({ error: "Token verification failed" });
+    const parts = authHeader.split(" ");
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      return res.status(401).json({ status: false, error: "Invalid token format. Expected Bearer <token>" });
     }
-    const existingUser = await User.findById(isVerify.id);
+
+    const token = parts[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.SECRET);
+    } catch (jwtError) {
+      return res.status(401).json({
+        status: false,
+        error: jwtError.name === "TokenExpiredError" ? "Token expired" : "Invalid token",
+      });
+    }
+
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ status: false, error: "Token verification failed" });
+    }
+
+    const existingUser = await User.findById(decoded.id);
     if (!existingUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    if (existingUser.verify == false) {
-      return res.status(400).json({ error: "User email not verified" });
+      return res.status(404).json({ status: false, error: "User not found" });
     }
 
-    req.userId = isVerify.id;
+    if (existingUser.verify === false) {
+      return res.status(403).json({ status: false, error: "User email not verified" });
+    }
+
+    req.userId = decoded.id;
+    req.user = existingUser;
     return next();
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ status: false, error: error.message });
   }
 };
 

@@ -8,7 +8,9 @@ import { promisify } from "util";
 import fs from "fs";
 import dotenv from "dotenv";
 import ngrok from "ngrok";
+
 dotenv.config();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -23,21 +25,27 @@ import authJwt from "./middlewares/jwt.js";
 
 // init
 const app = express();
-const port = process.env.PORT;
-const url = process.env.API_URL;
+const port = parseInt(process.env.PORT, 10) || 3000;
+const url = process.env.API_URL || "/api/v1";
 const connectionString = process.env.CONNECTION_STRING;
 const readdirAsync = promisify(fs.readdir);
+
+// ensure upload & portfolio directories exist
+const uploadsDir = path.join(__dirname, "images", "uploads");
+const portfolioDir = path.join(__dirname, "images", "portfolio");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(portfolioDir)) fs.mkdirSync(portfolioDir, { recursive: true });
 
 // middlewares
 app.use(cors());
 app.use(express.json());
 app.use(
   `${url}/uploads`,
-  express.static(path.join(__dirname, "images", "uploads"))
+  express.static(uploadsDir)
 );
 app.use(
   `${url}/portfolio`,
-  express.static(path.join(__dirname, "images", "portfolio"))
+  express.static(portfolioDir)
 );
 app.use(authJwt);
 
@@ -49,47 +57,72 @@ app.use(`${url}/community`, communityRouter);
 app.use(`${url}/resource`, resourceRouter);
 app.use(`${url}/portfolio`, portfolioRouter);
 
-app.use(`${url}/data`, async (req, res) => {
+// file list endpoint
+app.get(`${url}/data`, async (req, res) => {
   try {
-    const portfolio = path.join(__dirname, "images", "portfolio");
-    const uploads = path.join(__dirname, "images", "uploads");
-
-    const pfiles = await readdirAsync(portfolio, { withFileTypes: true });
+    const pfiles = await readdirAsync(portfolioDir, { withFileTypes: true });
     const portfolioFiles = pfiles.map((file) => file.name);
 
-    const ufiles = await readdirAsync(uploads, { withFileTypes: true });
+    const ufiles = await readdirAsync(uploadsDir, { withFileTypes: true });
     const uploadsFiles = ufiles.map((file) => file.name);
 
-    return res
-      .status(200)
-      .json({ portfolio: portfolioFiles, uploads: uploadsFiles });
+    return res.status(200).json({
+      portfolio: portfolioFiles,
+      uploads: uploadsFiles,
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-app.use(`/:error`, (req, res) => {
-  const { error } = req.params;
-  return res.send(
-    `hi from error:- you write ( ${error} ) and there is no api like this`
-  );
+// 404 handler
+app.use((req, res) => {
+  return res.status(404).json({
+    status: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  });
 });
 
-// connection
-await mongoose
-  .connect(connectionString)
-  .then(() => {
-    console.log("mongoose connection successfully");
-  })
-  .catch((err) => {
-    console.log(err);
+// global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled server error:", err);
+  const status = err.status || err.statusCode || 500;
+  return res.status(status).json({
+    status: false,
+    message: err.message || "Internal Server Error",
   });
-
-app.listen(port, async () => {
-  console.log(`server is listen on http://localhost:${port}`);
-  const url = await ngrok.connect({
-    addr: port,
-    authtoken: "2sxgo72zf5hsbVIMwXA9hhchfC0_4s37p48o6RvDzi6T3KWAu",
-  });
-  console.log(`Ngrok tunnel: ${url}`);
 });
+
+// database connection & server start
+const startServer = async () => {
+  try {
+    if (connectionString) {
+      await mongoose.connect(connectionString);
+      console.log("MongoDB connected successfully");
+    } else {
+      console.warn("CONNECTION_STRING environment variable is not defined");
+    }
+
+    app.listen(port, async () => {
+      console.log(`Autismo server running on http://localhost:${port}`);
+
+      if (process.env.ENABLE_NGROK === "true" && process.env.NGROK_AUTHTOKEN) {
+        try {
+          const tunnelUrl = await ngrok.connect({
+            addr: port,
+            authtoken: process.env.NGROK_AUTHTOKEN,
+          });
+          console.log(`Ngrok tunnel established: ${tunnelUrl}`);
+        } catch (ngrokErr) {
+          console.error("Ngrok tunnel connection failed:", ngrokErr.message);
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
+
